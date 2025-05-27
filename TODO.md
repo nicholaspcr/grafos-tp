@@ -1,9 +1,15 @@
-# TODO
+# TP
 
 Reference links
 - https://networkx.org/
     - To check if the implementation is valid.
 
+## TODO
+
+Até dia 30 fazer:
+- [ ] Implementar Kahn algorithm
+- [ ] Implementar visualização com graphiz
+- [ ] Template de relatório Latex no repositório
 
 ## Etapa 1
 
