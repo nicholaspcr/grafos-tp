@@ -43,19 +43,19 @@ def sort(in_graph: defaultdict[str, set], in_degree: defaultdict[str, int]) -> l
                 queue.append(w)
 
     # TODO
-    cycle = False
-    for node_name in graph:
-        node = graph[node_name]
-        if node.degree > 0:
-            if not cycle:
-                print("Cycling dependencies:", file=sys.stderr)
-            cycle = True
-            print(f'  - {node_name} (degree={node.degree})', file=sys.stderr)
-            for vertex in node.vertices:
-                print(f'    - {vertex} (degree={graph[vertex].degree})', file=sys.stderr)
-
-    if cycle:
-        return None
+    # cycle = False
+    # for node_name in graph:
+    #     node = graph[node_name]
+    #     if node.degree > 0:
+    #         if not cycle:
+    #             print("Cycling dependencies:", file=sys.stderr)
+    #         cycle = True
+    #         print(f'  - {node_name} (degree={node.degree})', file=sys.stderr)
+    #         for vertex in node.vertices:
+    #             print(f'    - {vertex} (degree={graph[vertex].degree})', file=sys.stderr)
+    #
+    # if cycle:
+    #     return None
 
     return sorted_list
 

@@ -13,5 +13,5 @@ def test(graph: defaultdict[str, set[str]]):
         for vertice in vertices:
             g.add_edge(vertice, node)
 
-    nx.draw_networkx(g, with_labels=True, node_size=30)
+    nx.draw_networkx(g, with_labels=False, node_size=30)
     plt.show()
