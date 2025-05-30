@@ -95,7 +95,7 @@ class BuildDependencyGraph:
             return self.module_prefix
         return f"{self.module_prefix}/{package_path_suffix}"
 
-    def build_dependency_graph(self):
+    def build_dependency_graph(self) -> tuple[defaultdict, defaultdict, set, defaultdict]:
         """
         Builds a dependency graph from Go files in the configured base directory.
 

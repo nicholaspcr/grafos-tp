@@ -39,3 +39,6 @@ logs/
 # Coverage reports (if you do basic testing)
 .coverage
 htmlcov/
+.python
+.idea
+output
