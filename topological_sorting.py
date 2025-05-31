@@ -1,29 +1,27 @@
-from collections import defaultdict
-from node import Node
+from collections import defaultdict, deque
 
-def topological_sort(in_graph: defaultdict[str, set], in_degree: defaultdict[str, int]) -> list[Node]:
-    graph: dict[str, Node] = dict()
-    queue: list[Node] = []
-    sorted_list: list[Node] = []
-    for node_name in in_graph:
-        graph[node_name] = Node(node_name, in_graph[node_name], in_degree[node_name])
+def topological_sort(graph: defaultdict[str, set], in_degree: defaultdict[str, int]) -> list[str]:
+    """
+    Performs a topological sort on a directed acyclic graph (DAG).
+    Uses Kahn's algorithm.
+    """
+    queue = deque()
+    result: list[str] = []
 
-    for node_name in graph.items():
-        if graph[node_name].degree == 0:
-            queue.append(graph[node_name])
+    for v in graph:
+        if in_degree[v] == 0:
+            queue.append(v)
 
-    # TODO
-    while len(queue) > 0:
-        node = queue.pop(0)
-        sorted_list.append(node)
+    while queue:
+        u = queue.popleft()
+        result.append(u)
 
-        for vertex in node.vertices:
-            w = graph[vertex]
-            w.degree -= 1
-            if w.degree == 0:
-                queue.append(w)
+        for v in graph[u]:
+            in_degree[v] -= 1
+            if in_degree[v] == 0:
+                queue.append(v)
 
-    if len(sorted_list) != len(in_graph):
-        print("contains cycle")
+    if len(result) != len(graph):
+        raise ValueError("Graph contains a cycle, topological sort is not possible.")
 
-    return sorted_list
+    return result
