@@ -27,11 +27,3 @@ def topological_sort(in_graph: defaultdict[str, set], in_degree: defaultdict[str
         print("contains cycle")
 
     return sorted_list
-
-def nodes_to_dict(nodes: list[Node]) -> defaultdict[str, set[str]]:
-    node_dict: defaultdict[str, set[str]] = defaultdict(set)
-
-    for node in nodes:
-        node_dict[node.name] = node.vertices
-
-    return node_dict

@@ -1,8 +1,8 @@
 import os
 
-from time import sleep
 from dependency_graph_builder import BuildDependencyGraph
-from topological_sorting import topological_sort, nodes_to_dict
+from topological_sorting import topological_sort
+from node import nodes_to_dict
 
 
 def main():
@@ -39,6 +39,7 @@ def main():
     sorted_nodes = topological_sort(graph, in_degree)
     if sorted_nodes is None:
         return
+
     sorted_nodes_dict = nodes_to_dict(sorted_nodes)
 
 

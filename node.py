@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 class Node:
     """
     Represents the Node used in the graph that represent the dependency relationships between Golang packages.
@@ -29,3 +31,11 @@ class Node:
 
     def __repr__(self):
         return self.__str__()
+
+def nodes_to_dict(nodes: list[Node]) -> defaultdict[str, set[str]]:
+    node_dict: defaultdict[str, set[str]] = defaultdict(set)
+
+    for node in nodes:
+        node_dict[node.name] = node.vertices
+
+    return node_dict
