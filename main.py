@@ -33,9 +33,6 @@ def main():
         for pkg in sorted(list(external_packages)):
             print(f"  - {pkg} (external/standard library)")
 
-    # Make sure stderr doesn't mix with stdout
-    sleep(0.01)
-
     sorted_nodes = topological_sort(graph, in_degree)
     if sorted_nodes is None:
         return
