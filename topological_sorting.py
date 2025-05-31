@@ -1,34 +1,14 @@
-import sys
 from collections import defaultdict
+from node import Node
 
-class Node:
-    name: str
-    vertices: set[str]
-    degree: int
-
-    def __init__(self, name: str, vertices: set[str], degree: int):
-        self.name = name
-        self.vertices = vertices
-        self.degree = degree
-
-    def __str__(self):
-        return ('Node['
-                f'name={self.name},'
-                f'vertices={self.vertices},'
-                f'degree={self.degree}'
-                ']')
-
-    def __repr__(self):
-        return self.__str__()
-
-def sort(in_graph: defaultdict[str, set], in_degree: defaultdict[str, int]) -> list[Node]:
+def topological_sort(in_graph: defaultdict[str, set], in_degree: defaultdict[str, int]) -> list[Node]:
     graph: dict[str, Node] = dict()
     queue: list[Node] = []
     sorted_list: list[Node] = []
     for node_name in in_graph:
         graph[node_name] = Node(node_name, in_graph[node_name], in_degree[node_name])
 
-    for node_name in graph:
+    for node_name in graph.items():
         if graph[node_name].degree == 0:
             queue.append(graph[node_name])
 
@@ -36,26 +16,15 @@ def sort(in_graph: defaultdict[str, set], in_degree: defaultdict[str, int]) -> l
     while len(queue) > 0:
         node = queue.pop(0)
         sorted_list.append(node)
+
         for vertex in node.vertices:
             w = graph[vertex]
             w.degree -= 1
             if w.degree == 0:
                 queue.append(w)
 
-    # TODO
-    # cycle = False
-    # for node_name in graph:
-    #     node = graph[node_name]
-    #     if node.degree > 0:
-    #         if not cycle:
-    #             print("Cycling dependencies:", file=sys.stderr)
-    #         cycle = True
-    #         print(f'  - {node_name} (degree={node.degree})', file=sys.stderr)
-    #         for vertex in node.vertices:
-    #             print(f'    - {vertex} (degree={graph[vertex].degree})', file=sys.stderr)
-    #
-    # if cycle:
-    #     return None
+    if len(sorted_list) != len(in_graph):
+        print("contains cycle")
 
     return sorted_list
 

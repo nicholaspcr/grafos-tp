@@ -1,10 +1,8 @@
 import os
-import tests
 
 from time import sleep
 from dependency_graph_builder import BuildDependencyGraph
-from graph_renderer import render
-from topological_sorting import sort, nodes_to_dict
+from topological_sorting import topological_sort, nodes_to_dict
 
 
 def main():
@@ -20,20 +18,6 @@ def main():
     if not all_packages:
         print("No Go packages found or no imports detected.")
         return
-
-    # fail = False
-    # for package in all_packages:
-    #     if not graph[package]:
-    #         if not fail:
-    #             print("Packages without node:", file=sys.stderr)
-    #         fail = True
-    #         print(f'  - {package}', file=sys.stderr)
-    # if fail: return
-
-    # Add missing nodes
-    for package in all_packages:
-        if not graph[package]:
-            graph[package] = set()
 
     # Filter to show only packages that have .go files within the scanned directory
     # (i.e., locally defined packages)
@@ -52,14 +36,10 @@ def main():
     # Make sure stderr doesn't mix with stdout
     sleep(0.01)
 
-    sorted_nodes = sort(graph, in_degree)
+    sorted_nodes = topological_sort(graph, in_degree)
     if sorted_nodes is None:
         return
     sorted_nodes_dict = nodes_to_dict(sorted_nodes)
-
-    # render(sorted_nodes_dict)
-
-    # tests.test(sorted_nodes_dict)
 
 
 if __name__ == "__main__":
