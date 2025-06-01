@@ -1,7 +1,7 @@
 import os
 
 from dependency_graph_builder import BuildDependencyGraph
-from topological_sorting import topological_sort
+from topological_sorting import Topological
 
 def main():
     """Main function to orchestrate the script."""
@@ -24,22 +24,25 @@ def main():
     external_packages = all_packages - local_packages
 
     # NOTE: This prints the packages found separated by external and local packages.
-    # print("Found the following packages:")
-    # for pkg in sorted(list(local_packages)):
-    #     print(f"  - {pkg} (local)")
-    # if external_packages:
-    #     print("\nReferenced external packages (will be ordered if they are part of dependency chains):")
-    #     for pkg in sorted(list(external_packages)):
-    #         print(f"  - {pkg} (external/standard library)")
+    print("Found the following packages:")
+    for pkg in sorted(list(local_packages)):
+        print(f"  - {pkg} (local)")
+    if external_packages:
+        print("\nReferenced external packages (will be ordered if they are part of dependency chains):")
+        for pkg in sorted(list(external_packages)):
+            print(f"  - {pkg} (external/standard library)")
 
-    sorted_nodes = []
     try:
-        sorted_nodes = topological_sort(graph, in_degree)
+        topological = Topological()
+        if topological.is_cyclic(graph):
+            print("There is a cycle in the dependencies, can't generate topological sort")
+            return
+
+        result = topological.sort_group(graph, in_degree)
+        print(f"Sorted nodes: {result}")
+
     except Exception as e:
         print("Error is: ", e)
-
-    print("Sorted nodes in the dependency graph")
-    print("nodes: ", sorted_nodes)
 
 if __name__ == "__main__":
     main()
