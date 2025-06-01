@@ -1,3 +1,7 @@
 package bar
 
-func Bar() {}
+import "fmt"
+
+func Bar() {
+	fmt.Print("bar")
+}
