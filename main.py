@@ -1,5 +1,6 @@
 import os
 import graphviz
+import webbrowser
 
 from dependency_graph_builder import BuildDependencyGraph
 from topological_sorting import Topological
@@ -57,10 +58,40 @@ def main():
             for v in graph[node]:
                 dot.edge(node, v)
 
-        output_filename = 'dependency_graph.gv'
-        dot.render(output_filename, view=True, format='pdf')
+        # output_filename = 'dependency_graph.gv'
+        # dot.render(output_filename, view=True, format='pdf')
+        # print(f"Graph saved to {output_filename} and {output_filename}.pdf")
+        # dot.render('dependency_graph', format='svg', view=True)
+        svg_output = dot.pipe(format='svg').decode('utf-8')
 
-        print(f"Graph saved to {output_filename} and {output_filename}.pdf")
+        # Create a simple HTML file with the SVG embedded
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Graphviz in HTML</title>
+            <style>
+                body {{ font-family: sans-serif; display: flex; justify-content: center; }}
+            </style>
+        </head>
+        <body>
+            <div>
+                <h1>Static Graphviz Graph</h1>
+                {svg_output}
+            </div>
+        </body>
+        </html>
+        """
+
+        # Save the HTML to a file
+        output_filename = 'static_graph.html'
+        with open(output_filename, 'w') as f:
+            f.write(html_content)
+
+        print(f"Graph saved to {output_filename}")
+
+        # Optionally, open the file in a web browser
+        webbrowser.open(f'file://{os.path.realpath(output_filename)}')
 
 
     except Exception as e:
