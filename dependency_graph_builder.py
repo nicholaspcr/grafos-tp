@@ -32,7 +32,7 @@ class BuildDependencyGraph:
         go_files = []
         for root, _, files in os.walk(self.base_dir):
             for file in files:
-                if file.endswith(".go"):
+                if file.endswith(".go") and not file.endswith("_test.go"):
                     go_files.append(os.path.join(root, file))
         return go_files
 
