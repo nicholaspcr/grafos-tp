@@ -19,11 +19,15 @@ def main():
         print("No Go packages found or no imports detected.")
         return
 
-    # # Filter to show only packages that have .go files within the scanned directory
-    # # (i.e., locally defined packages)
-    # local_packages = {pkg for pkg, files in package_files_map.items() if files}
-    # # Also include packages that were imported but not locally defined, these are external
-    # external_packages = all_packages - local_packages
+    # Filter to show only packages that have .go files within the scanned directory
+    # (i.e., locally defined packages)
+    local_packages = {pkg for pkg, files in package_files_map.items() if files}
+    # Also include packages that were imported but not locally defined, these are external
+    external_packages = all_packages - local_packages
+
+    # for key in external_packages:
+    #     del in_degree[key]
+    #     del graph[key]
 
     # # NOTE: This prints the packages found separated by external and local packages.
     # print("Found the following packages:")
@@ -44,14 +48,17 @@ def main():
         print(f"Sorted nodes: {sorted_nodes}")
 
         dot = graphviz.Digraph('DependencyGraph', comment='Topological Sort')
-        dot.attr(rankdir='TB', splines='ortho') # Using orthogonal lines can look cleaner
-        dot.attr('node', shape='box', style='rounded') # Style for nodes
+        dot.attr(rankdir='LR', splines='ortho')
+        dot.attr('node', shape='box', style='rounded')
 
         for layer in sorted_nodes:
             with dot.subgraph() as s:
                 s.attr(rank='same')
                 for node_name in layer:
-                    s.node(node_name)
+                    if node_name in external_packages:
+                        s.node(node_name, style='filled', fillcolor='tomato', fontcolor='white')
+                    else:
+                        s.node(node_name, style='filled', fillcolor='lightgrey')
 
         # --- Step 2: Create all the edges based on the original dependencies ---
         for node in graph:
@@ -67,16 +74,41 @@ def main():
         # Create a simple HTML file with the SVG embedded
         html_content = f"""
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
         <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Graphviz in HTML</title>
             <style>
-                body {{ font-family: sans-serif; display: flex; justify-content: center; }}
+                body {{
+                    margin: 0;
+                    padding: 20px; /* Add some padding around the body */
+                    background-color: #f0f2f5; /* A light background for the page */
+                    display: flex;
+                    flex-direction: column; /* Stack title and graph-container vertically */
+                    align-items: center; /* Center content on the page */
+                    min-height: 100vh; /* Ensure body takes at least full viewport height */
+                    box-sizing: border-box;
+                }}
+                h1 {{
+                    text-align: center;
+                    color: #333;
+                    margin-bottom: 20px;
+                }}
+                .graph-container svg {{
+                    display: block; /* Removes extra space below inline SVGs and allows margin auto if needed */
+                    width: auto; /* Allows the SVG to take its natural width as defined by Graphviz */
+                                 /* The container's 'overflow-x: auto' will handle scrolling. */
+                    height: auto;
+                    min-width: 0;
+                    max-height: 80vh;
+                    overflow-y: auto;
+                }}
             </style>
         </head>
         <body>
-            <div>
-                <h1>Static Graphviz Graph</h1>
+            <h1>Static Graphviz Graph</h1>
+            <div class="graph-container">
                 {svg_output}
             </div>
         </body>
