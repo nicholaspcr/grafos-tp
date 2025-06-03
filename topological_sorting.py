@@ -4,10 +4,6 @@ class Topological:
     """
     Encapsulates the logic for generating the topological sort of the dependency graph.
     """
-    def __init__(self):
-        """
-        Initializes the Topological class.
-        """
 
     def _is_cyclic_util(
         self,
