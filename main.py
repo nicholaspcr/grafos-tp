@@ -9,7 +9,7 @@ def main():
     """Main function to orchestrate the script."""
     target_directory = input("Enter the root directory of the Go project: ")
     if not os.path.isdir(target_directory):
-        print(f"Error: Directory '{target_directory}' not found.")
+        print(f"Error: Directory '{os.path.abspath(target_directory)}' not found.")
         return
 
     builder = BuildDependencyGraph(target_directory)
@@ -38,6 +38,7 @@ def main():
     #     for pkg in sorted(list(external_packages)):
     #         print(f"  - {pkg} (external/standard library)")
 
+    print("Sorting graph")
     try:
         topological = Topological()
         if topological.is_cyclic(graph):
@@ -45,12 +46,12 @@ def main():
             return
 
         sorted_nodes = topological.sort_group(graph, in_degree)
-        print(f"Sorted nodes: {sorted_nodes}")
 
         dot = graphviz.Digraph('DependencyGraph', comment='Topological Sort')
         dot.attr(rankdir='LR', splines='ortho')
         dot.attr('node', shape='box', style='rounded')
 
+        print("Generating rendered graph")
         for layer in sorted_nodes:
             with dot.subgraph() as s:
                 s.attr(rank='same')
@@ -82,27 +83,21 @@ def main():
             <style>
                 body {{
                     margin: 0;
-                    padding: 20px; /* Add some padding around the body */
+                    padding: 2rem; /* Add some padding around the body */
                     background-color: #f0f2f5; /* A light background for the page */
-                    display: flex;
-                    flex-direction: column; /* Stack title and graph-container vertically */
-                    align-items: center; /* Center content on the page */
                     min-height: 100vh; /* Ensure body takes at least full viewport height */
                     box-sizing: border-box;
+                    width: fit-content;
                 }}
                 h1 {{
                     text-align: center;
                     color: #333;
-                    margin-bottom: 20px;
+                    margin-bottom: 2rem;
                 }}
                 .graph-container svg {{
                     display: block; /* Removes extra space below inline SVGs and allows margin auto if needed */
-                    width: auto; /* Allows the SVG to take its natural width as defined by Graphviz */
-                                 /* The container's 'overflow-x: auto' will handle scrolling. */
-                    height: auto;
-                    min-width: 0;
-                    max-height: 80vh;
-                    overflow-y: auto;
+                    width: auto;    /* Allows the SVG to take its natural width as defined by Graphviz */
+                    
                 }}
             </style>
         </head>
@@ -120,7 +115,7 @@ def main():
         with open(output_filename, 'w') as f:
             f.write(html_content)
 
-        print(f"Graph saved to {output_filename}")
+        print(f"Graph saved to {os.path.realpath(output_filename)}")
 
         # Optionally, open the file in a web browser
         webbrowser.open(f'file://{os.path.realpath(output_filename)}')
