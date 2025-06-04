@@ -40,35 +40,28 @@ class BuildDependencyGraph:
     def extract_imports(file_path):
         """
         Extracts imported packages from a single Go file.
-        This method is static as it doesn't depend on the instance's state.
+        This method is static as it doesn't depend on the instance's state and
+        now correctly handles both single-line and grouped imports.
         """
         imports = set()
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
-        # Regex to find import statements, including grouped imports
-        # import "fmt"
-        # import (
-        #     "net/http"
-        #     custom "example.com/custom/pkg"
-        # )
-        import_block_match = re.search(r'import\s*\(([\w./\-"\s]+)\)', content, re.MULTILINE)
-        if import_block_match:
-            block_content = import_block_match.group(1)
-            lines = block_content.split('\n')
-            for line in lines:
-                line = line.strip()
-                if not line or line.startswith('//'):  # Skip empty lines and comments
-                    continue
-                # Handle aliased imports (e.g., _ "pkg", alias "pkg")
-                parts = line.split()
-                if len(parts) > 0:
-                    # The package path is usually the last part, enclosed in quotes
-                    pkg_match = re.search(r'"([^"]+)"', parts[-1])
-                    if pkg_match:
-                        imports.add(pkg_match.group(1))
 
-        # Find single line imports
-        single_imports = re.findall(r'import\s*\(([\w./\-"\s]+)\)', content)
+        # 1. Find and parse grouped imports: import (...)
+        # The re.DOTALL flag allows '.' to match newlines.
+        import_block_match = re.search(r'import\s+\((.*?)\)', content, re.DOTALL)
+        if import_block_match:
+            # Extract the content within the parentheses
+            block_content = import_block_match.group(1)
+            # Find all quoted package paths within the block. This is simpler and
+            # more robust than parsing line by line.
+            found_imports = re.findall(r'"([^"]+)"', block_content)
+            for imp in found_imports:
+                imports.add(imp)
+
+        # 2. Find all single-line imports: import "..."
+        # This was not handled correctly in the original code.
+        single_imports = re.findall(r'import\s+"([^"]+)"', content)
         for imp in single_imports:
             imports.add(imp)
 
