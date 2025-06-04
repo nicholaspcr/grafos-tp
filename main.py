@@ -36,11 +36,13 @@ def main():
     #     print("\nReferenced external packages (will be ordered if they are part of dependency chains):")
     #     for pkg in sorted(list(external_packages)):
     #         print(f"  - {pkg} (external/standard library)")
+    print(f"graph: {graph}")
+    print(f"in_degree: {in_degree}")
 
     print("Sorting graph")
     try:
-        topological = Topological()
-        if topological.is_cyclic(graph):
+        topological = Topological(graph)
+        if topological.is_cyclic():
             print("There is a cycle in the dependencies, can't generate topological sort")
             return
 

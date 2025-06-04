@@ -5,42 +5,51 @@ class Topological:
     Encapsulates the logic for generating the topological sort of the dependency graph.
     """
 
+    def __init__(self, graph):
+        """
+        Initializes Topological.
+
+        Args:
+            directory (str): The root directory of the Go project.
+        """
+        self.graph = graph
+        self.visited = defaultdict(bool)
+        self.recursion_stack = defaultdict(bool)
+
     def _is_cyclic_util(
         self,
-        graph: defaultdict[str, set],
         node: str,
-        visited: defaultdict[str, bool],
-        recursion_stack: defaultdict[str, bool],
     ):
         # If the node is already in the current recursion stack, a cycle is detected
-        if recursion_stack[node]:
+        if self.recursion_stack[node]:
             return True
 
         # If the node is already visited and not part of the recursion stack, skip it
-        if visited[node]:
+        if self.visited[node]:
             return False
 
-        visited[node] = True
-        recursion_stack[node] = True
+        self.visited[node] = True
+        self.recursion_stack[node] = True
 
-        for v in graph[node]:
-            if self._is_cyclic_util(graph, v, visited, recursion_stack):
+        for v in self.graph[node]:
+            if self._is_cyclic_util(v):
                 return True
 
         # Remove the node from the recursion stack before returning
-        recursion_stack[node] = False
+        self.recursion_stack[node] = False
         return False
 
-    def is_cyclic(self, graph: defaultdict[str, set]) -> bool:
-        visited = defaultdict(bool)
-        recursion_stack = defaultdict(bool)
+    def is_cyclic(self) -> bool:
+        # clears all keys
+        self.visited.clear()
+        self.recursion_stack.clear()
 
-        for node in graph:
-            visited[node] = False
-            recursion_stack[node] = False
+        for node in self.graph:
+            self.visited[node] = False
+            self.recursion_stack[node] = False
 
-        for node in list(graph):
-            if not visited[node] and self._is_cyclic_util(graph, node, visited, recursion_stack):
+        for node in list(self.graph):
+            if not self.visited[node] and self._is_cyclic_util(node):
                 return True
         return False
 
