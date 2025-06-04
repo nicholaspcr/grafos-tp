@@ -67,16 +67,11 @@
   10 linhas e devem estar na primeira página do artigo.
 \end{abstract}
 
-
 \section{Informações Gerais}
 
-Todos os artigos completos e pôsteres (artigos curtos) submetidos a alguma conferência da SBC,
-incluindo quaisquer documentos de apoio, devem ser escritos em inglês ou em
-português. O formato do papel deve ser A4 com coluna única, margem superior de 3,5 cm, 
-margem inferior de 2,5 cm e margens laterais de 3,0 cm, sem
-cabeçalhos ou rodapés. A fonte principal deve ser Times, tamanho nominal de 12
-pontos, com 6 pontos de espaço antes de cada parágrafo. Os números das páginas
-devem ser suprimidos.
+O presente trabalho se insere no contexto do desenvolvimento de ferramentas computacionais para processamento de dados estruturados como grafos, com foco na aplicação de conceitos da teoria dos grafos e na adesão a boas práticas de engenharia de software. O objetivo central é apresentar uma solução para um problema prático na análise de projetos de software desenvolvidos na linguagem Go (Golang): a determinação da ordem de inicialização de seus pacotes. A linguagem Go, reconhecida por sua eficiência e robusto sistema de gerenciamento de pacotes, impõe uma ordem de inicialização determinística onde as dependências de um pacote são inicializadas antes do próprio pacote. Essa característica é crucial para a correta execução das funções `init()`, responsáveis pela configuração inicial de cada pacote.
+
+A ordem de inicialização de pacotes em Go pode ser naturalmente modelada como um grafo de dependências direcionado acíclico (DAG). A obtenção de uma ordenação topológica deste grafo revela a sequência exata em que os pacotes são carregados e suas funções `init()` são executadas. Tal visualização não apenas auxilia na compreensão da arquitetura de um projeto, mas também é fundamental para ferramentas de análise estática e otimização de compilação. Para alcançar este objetivo, optou-se pela implementação do algoritmo de Kahn, uma abordagem clássica para a ordenação topológica. Este trabalho detalha o desenvolvimento de um script em Python que utiliza o algoritmo de Kahn para processar as dependências de um projeto Golang, gerando como saída a sua ordenação topológica. A ferramenta desenvolvida visa oferecer um mecanismo eficaz para que desenvolvedores e analistas possam visualizar e gerenciar a complexa rede de interdependências em seus projetos Go, contribuindo para uma melhor compreensão da sequência de inicialização e, consequentemente, do comportamento do software.
 
 Os artigos completos devem respeitar os limites de página definidos pela conferência.
 Conferências que publicam apenas resumos pedem por textos de \textbf{uma} página.
