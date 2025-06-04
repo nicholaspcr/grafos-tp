@@ -36,8 +36,6 @@ def main():
     #     print("\nReferenced external packages (will be ordered if they are part of dependency chains):")
     #     for pkg in sorted(list(external_packages)):
     #         print(f"  - {pkg} (external/standard library)")
-    print(f"graph: {graph}")
-    print(f"in_degree: {in_degree}")
 
     print("Sorting graph")
     try:
