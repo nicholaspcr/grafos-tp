@@ -51,7 +51,7 @@ class BuildDependencyGraph:
         #     "net/http"
         #     custom "example.com/custom/pkg"
         # )
-        import_block_match = re.search(r'import\s*\(([^)]+)\)', content, re.MULTILINE)
+        import_block_match = re.search(r'import\s*\(([\w./\-"\s]+)\)', content, re.MULTILINE)
         if import_block_match:
             block_content = import_block_match.group(1)
             lines = block_content.split('\n')
@@ -68,7 +68,7 @@ class BuildDependencyGraph:
                         imports.add(pkg_match.group(1))
 
         # Find single line imports
-        single_imports = re.findall(r'import\s+"([^"]+)"', content)
+        single_imports = re.findall(r'import\s*\(([\w./\-"\s]+)\)', content)
         for imp in single_imports:
             imports.add(imp)
 
