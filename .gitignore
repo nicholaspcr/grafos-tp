@@ -1,3 +1,6 @@
+# Script output
+static_graph.html
+
 # Python Bytecode and Cache
 __pycache__/
 *.pyc
