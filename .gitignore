@@ -42,3 +42,115 @@ htmlcov/
 .python
 .idea
 output
+
+# LaTeX intermediate and auxiliary files
+# -------------------------------------
+# These files are generated during the compilation process and can be safely ignored.
+*.aux
+*.acn
+*.acr
+*.alg
+*.bbl
+*.bcf
+*.blg
+*.brf
+*.cb
+*.cb2
+*.dvi
+*.fdb_latexmk
+*.fls
+*.fmt
+*.fot
+*.glo
+*.glg
+*.gls
+*.ist
+*.idx
+*.ilg
+*.ind
+*.lof
+*.log
+*.lol
+*.lot
+*.maf
+*.mtc
+*.mtc0
+*.mtc1
+*.nav
+*.nlo
+*.out
+*.pdfsync
+*.pre
+*.snm
+*.soc
+*.spl
+*.sta
+*.synctex
+*.synctex(busy)
+*.synctex.gz
+*.synctex.gz(busy)
+*.tbc
+*.thm
+*.toc
+*.tdo
+*.vrb
+*.xdy
+
+# LaTeX build and output directories
+# ----------------------------------
+# These directories often contain the compiled PDF and other generated files.
+# It's a good practice to have LaTeX tools output to a specific directory.
+/build/
+/out/
+/output/
+/generated/
+/_generated/
+/latex.out/
+
+# Final PDF file
+# --------------
+# It's generally recommended not to version control the final PDF.
+# This avoids large file sizes in the repository and merge conflicts.
+# Uncomment the line below if you decide to ignore all PDF files.
+# *.pdf
+
+# Editor-specific files
+# ---------------------
+# These are temporary or configuration files created by various text editors.
+
+# VS Code
+.vscode/
+
+# TeXstudio
+*.txsaux
+
+# Texpad
+.texpadtmp/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Emacs
+*~
+.#*
+
+# Vim
+*.swp
+*.swo
+
+# Other
+# -----
+# Miscellaneous files that are often not needed in version control.
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Compressed files (if they are generated from source)
+*.zip
+*.tar.gz
+
+# Pygments (for minted package)
+_minted*/
+*.pyg
