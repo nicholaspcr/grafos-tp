@@ -60,7 +60,6 @@ class BuildDependencyGraph:
                 imports.add(imp)
 
         # 2. Find all single-line imports: import "..."
-        # This was not handled correctly in the original code.
         single_imports = re.findall(r'import\s+"([^"]+)"', content)
         for imp in single_imports:
             imports.add(imp)
