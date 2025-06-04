@@ -47,6 +47,7 @@ def main():
         sorted_nodes = topological.sort_group(graph, in_degree)
 
         render(graph, sorted_nodes, external_packages)
+
     except Exception as e:
         print("An unexpected error occurred: ", e)
 

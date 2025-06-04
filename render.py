@@ -1,8 +1,6 @@
 import os
 import webbrowser
-
 import graphviz
-
 
 def render(graph, sorted_nodes, external_packages):
     dot = graphviz.Digraph('DependencyGraph', comment='Topological Sort')
@@ -55,7 +53,6 @@ def render(graph, sorted_nodes, external_packages):
                 .graph-container svg {{
                     display: block; /* Removes extra space below inline SVGs and allows margin auto if needed */
                     width: auto;    /* Allows the SVG to take its natural width as defined by Graphviz */
-                    
                 }}
             </style>
         </head>
