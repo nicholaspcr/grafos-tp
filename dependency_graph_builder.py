@@ -87,7 +87,7 @@ class BuildDependencyGraph:
             return self.module_prefix
         return f"{self.module_prefix}/{package_path_suffix}"
 
-    def build_dependency_graph(self) -> tuple[defaultdict, defaultdict, set, defaultdict]:
+    def build_dependency_graph(self) -> tuple[defaultdict, defaultdict, set, defaultdict, str]:
         """
         Builds a dependency graph from Go files in the configured base directory.
 
@@ -136,4 +136,4 @@ class BuildDependencyGraph:
             if pkg not in in_degree: # This will cover external packages not depending on anything in the project
                 in_degree[pkg] = 0
 
-        return graph, in_degree, all_packages, package_files
+        return graph, in_degree, all_packages, package_files, self.module_prefix

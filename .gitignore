@@ -157,3 +157,5 @@ Thumbs.db
 # Pygments (for minted package)
 _minted*/
 *.pyg
+
+/examples/.*/

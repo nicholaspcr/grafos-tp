@@ -2,7 +2,7 @@ import os
 import webbrowser
 import graphviz
 
-def render(graph, sorted_nodes, external_packages):
+def render(graph, sorted_nodes, external_packages, module_prefix: str):
     dot = graphviz.Digraph('DependencyGraph', comment='Topological Sort')
     dot.attr(rankdir='LR', splines='ortho')
     dot.attr('node', shape='box', style='rounded')
@@ -66,7 +66,7 @@ def render(graph, sorted_nodes, external_packages):
         """
 
     # Save the HTML to a file
-    output_filename = 'static_graph.html'
+    output_filename = f'{module_prefix.replace("/", "_")}.html'
     with open(output_filename, 'w') as f:
         f.write(html_content)
 

@@ -1,4 +1,5 @@
 import os
+import sys
 
 from dependency_graph_builder import BuildDependencyGraph
 from render import render
@@ -6,13 +7,17 @@ from topological_sorting import Topological
 
 def main():
     """Main function to orchestrate the script."""
-    target_directory = input("Enter the root directory of the Go project: ")
+    if sys.argv.__len__() > 1:
+        target_directory = sys.argv[1]
+    else:
+        target_directory = input("Enter the root directory of the Go project: ")
+
     if not os.path.isdir(target_directory):
         print(f"Error: Directory '{os.path.abspath(target_directory)}' not found.")
         return
 
     builder = BuildDependencyGraph(target_directory)
-    graph, in_degree, all_packages, package_files_map = builder.build_dependency_graph()
+    graph, in_degree, all_packages, package_files_map, module_prefix = builder.build_dependency_graph()
 
     if not all_packages:
         print("No Go packages found or no imports detected.")
@@ -46,7 +51,7 @@ def main():
 
         sorted_nodes = topological.sort_group(graph, in_degree)
 
-        render(graph, sorted_nodes, external_packages)
+        render(graph, sorted_nodes, external_packages, module_prefix)
 
     except Exception as e:
         print("An unexpected error occurred: ", e)
