@@ -11,7 +11,7 @@ main_dir=$PWD
 for dir in */ .[^.]*/; do
   if ! [ -d "$main_dir/.out" ]; then
       mkdir ".out"
-      cd ".out" || return 1
+      cd ".out" || exit 1
   fi
 
   python "${SCRIPT_DIR}/../main.py" "$main_dir/$dir" &
