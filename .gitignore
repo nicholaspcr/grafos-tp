@@ -1,5 +1,6 @@
 # Script output
 static_graph.html
+main.pdf
 
 # Python Bytecode and Cache
 __pycache__/
