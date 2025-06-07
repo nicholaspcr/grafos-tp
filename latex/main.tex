@@ -81,6 +81,48 @@ Este trabalho se enquadra na proposta de "Gestão de Conflitos em Sistemas de De
 
 O restante deste artigo está organizado da seguinte forma: a Seção 2 apresenta a fundamentação teórica sobre grafos, ordenação topológica e o sistema de pacotes do Go. A Seção 3 detalha a modelagem do problema e a arquitetura da ferramenta desenvolvida. A Seção 4 apresenta os experimentos realizados e discute os resultados obtidos. Finalmente, a Seção 5 conclui o trabalho e aponta direções para desenvolvimentos futuros.
 
+\section{Fundamentação Teórica}
+Esta seção aborda os conceitos fundamentais que sustentam o desenvolvimento deste trabalho, incluindo a teoria dos grafos, o algoritmo de ordenação topológica e as particularidades do sistema de pacotes da linguagem Go.
+
+\subsection{Teoria dos Grafos}
+Um grafo $G = (V, E)$ é uma estrutura matemática usada para modelar relações entre objetos. Consiste em um conjunto de vértices $V$ (ou nós) e um conjunto de arestas $E$ que conectam pares de vértices. Em um \textbf{grafo direcionado} (ou digrafo), as arestas têm uma direção, sendo representadas por pares ordenados de vértices $(u, v)$, indicando uma ligação de $u$ para $v$.
+
+No contexto deste trabalho, o modelo utilizado é um grafo direcionado, onde:
+\begin{itemize}
+    \item \textbf{Vértices (V):} Representam os pacotes do projeto Go, tanto os locais (definidos no projeto) quanto os externos (bibliotecas padrão ou de terceiros).
+    \item \textbf{Arestas (E):} Uma aresta direcionada $(u, v)$ existe se o pacote $v$ importa o pacote $u$. Isso significa que $u$ é uma dependência de $v$.
+\end{itemize}
+
+Uma métrica importante em grafos direcionados é o \textbf{grau de entrada (in-degree)} de um vértice, que corresponde ao número de arestas que chegam a ele. Um vértice com grau de entrada zero não possui dependências dentro do grafo.
+
+\subsection{Ordenação Topológica}
+A ordenação topológica de um grafo direcionado é uma ordenação linear de seus vértices tal que para toda aresta direcionada $(u, v)$, o vértice $u$ vem antes de $v$ na ordenação. Uma ordenação topológica só é possível se, e somente se, o grafo não contiver ciclos direcionados, ou seja, se for um \textbf{Grafo Acíclico Direcionado (DAG)}.
+
+A existência de uma ordenação topológica no nosso grafo de dependências corresponde a uma sequência válida de inicialização dos pacotes Go. Se o grafo contiver um ciclo, não há ordenação topológica possível, o que corresponde a um erro de "dependência cíclica" no compilador Go.
+
+\subsubsection{Algoritmo de Kahn}
+Existem vários algoritmos para encontrar uma ordenação topológica. O escolhido para este trabalho foi o \textbf{algoritmo de Kahn}, devido à sua capacidade de processar os vértices em "camadas", o que é ideal para a visualização proposta. O algoritmo funciona da seguinte maneira:
+\begin{enumerate}
+    \item Calcular o grau de entrada (in-degree) de todos os vértices do grafo.
+    \item Inicializar uma fila com todos os vértices que possuem grau de entrada igual a zero. Estes são os pacotes sem dependências.
+    \item Enquanto a fila não estiver vazia:
+    \begin{enumerate}
+        \item Remover um vértice $n$ da fila e adicioná-lo à lista de ordenação topológica.
+        \item Para cada vértice $m$ que é vizinho de $n$ (ou seja, para cada pacote que depende de $n$):
+        \begin{enumerate}
+            \item Decrementar o grau de entrada de $m$.
+            \item Se o grau de entrada de $m$ se tornar zero, adicioná-lo à fila.
+        \end{enumerate}
+    \end{enumerate}
+    \item Ao final, se o número de vértices na lista de ordenação topológica for igual ao número total de vértices do grafo, a ordenação foi bem-sucedida. Caso contrário, o grafo contém pelo menos um ciclo.
+\end{enumerate}
+A implementação deste algoritmo pode ser vista no arquivo `topological{\_}sorting.py`.
+
+\subsection{Sistema de Pacotes e Módulos em Go}
+Go organiza o código em pacotes, que são coleções de arquivos-fonte no mesmo diretório. O `go.mod` é um arquivo na raiz do projeto que define o caminho do módulo, que serve como um prefixo para todos os pacotes dentro do projeto, e também gerencia as dependências externas.
+
+A diretiva `import` é usada para declarar dependências entre pacotes. Como mencionado, a ordem de execução das funções `init()` de cada pacote segue a ordem de dependência, exigindo uma resolução que é, na prática, uma ordenação topológica.
+
 \begin{figure}[ht]
 \centering
 \includegraphics[width=.3\textwidth]{fig2.jpg}
