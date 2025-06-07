@@ -55,13 +55,12 @@
 \maketitle
 
 \begin{resumo} 
-  A complexidade crescente dos sistemas de software modernos exige mecanismos robustos para a gestão de dependências. Este artigo apresenta o desenvolvimento de uma ferramenta para análise e visualização de dependências em projetos na linguagem Go. O problema da ordem de inicialização de pacotes é modelado como um grafo direcionado, onde os pacotes são os vértices e as importações representam as arestas. Utilizando o algoritmo de Kahn para ordenação topológica, a ferramenta determina a sequência de compilação segura e identifica a existência de dependências cíclicas, um erro crítico em Go. O trabalho detalha a implementação em Python, desde a análise do código-fonte até a geração de uma visualização gráfica interativa do grafo, alinhando-se ao tema de gestão de conflitos em sistemas de dependência.
+A gestão de dependências é um desafio em software moderno. Este artigo apresenta uma ferramenta que analisa e visualiza dependências em projetos Go, modelando-as como um grafo direcionado. Através da ordenação topológica com o algoritmo de Kahn, a ferramenta determina a sequência de compilação segura e detecta dependências cíclicas — um erro crítico em Go. A solução, implementada em Python, abrange desde a análise do código até a geração de um grafo interativo, oferecendo um suporte prático para a gestão de conflitos em sistemas de dependência.
 \end{resumo}
 
 \begin{abstract}
-  The growing complexity of modern software systems demands robust mechanisms for dependency management. This paper presents the development of a tool for analyzing and visualizing dependencies in projects written in the Go language. The package initialization order problem is modeled as a directed graph, where packages are vertices and imports represent edges. Using Kahn's algorithm for topological sorting, the tool determines the safe compilation sequence and identifies the existence of cyclic dependencies, a critical error in Go. The work details the Python implementation, from source code parsing to the generation of an interactive graphical visualization of the graph, aligning with the theme of conflict management in dependency systems.
+Dependency management is a challenge in modern software. This paper introduces a tool that analyzes and visualizes dependencies in Go projects by modeling them as a directed graph. Through topological sorting with Kahn's algorithm, the tool determines a safe compilation sequence and detects cyclic dependencies—a critical error in Go. The solution, implemented in Python, covers the process from code analysis to generating an interactive graph, providing practical support for managing conflicts in dependency systems.
 \end{abstract}
-
 
 \section{Introdução}
 
