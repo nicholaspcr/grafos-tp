@@ -123,6 +123,50 @@ Go organiza o código em pacotes, que são coleções de arquivos-fonte no mesmo
 
 A diretiva `import` é usada para declarar dependências entre pacotes. Como mencionado, a ordem de execução das funções `init()` de cada pacote segue a ordem de dependência, exigindo uma resolução que é, na prática, uma ordenação topológica.
 
+\section{Modelagem e Desenvolvimento da Ferramenta}
+Esta seção descreve a arquitetura e os componentes da ferramenta desenvolvida, detalhando como o problema de análise de
+dependências foi modelado e implementado em Python. A ferramenta é composta por três módulos principais, conforme os
+arquivos `dependency{\_}graph{\_}builder.py`, `topological{\_}sorting.py` e `render.py`.
+
+\subsection{Modelagem do Grafo de Dependências}
+O problema foi modelado como um grafo direcionado $G = (V, E)$, conforme descrito na Seção 2.1. A estrutura de dados escolhida para representar o grafo foi um dicionário (hash map) em Python, onde as chaves são os nomes dos pacotes (vértices) e os valores são conjuntos contendo os pacotes que dependem deles (vizinhos).
+
+\begin{itemize}
+    \item \textbf{`graph = defaultdict(set)`:} Representa as arestas. `graph[u]` contém um conjunto de vértices `{v1, v2, ...}` para os quais existe uma aresta $(u, v1)$, $(u, v2)$, etc.
+    \item \textbf{`in\_degree = defaultdict(int)`:} Armazena o grau de entrada de cada vértice, essencial para o algoritmo de Kahn.
+\end{itemize}
+
+\subsection{Componentes da Ferramenta}
+A ferramenta segue um fluxo de execução claro: extração de dados, processamento (ordenação) e visualização.
+
+\subsubsection{Extração e Construção do Grafo (\texttt{dependency\_graph\_builder.py})}
+Este módulo é responsável por ler o sistema de arquivos e construir a representação do grafo. O processo é o seguinte:
+\begin{enumerate}
+    \item \textbf{Identificação do Módulo:} A classe `BuildDependencyGraph` inicia lendo o arquivo `go.mod` para determinar o prefixo do módulo do projeto. Isso é crucial para nomear corretamente os pacotes locais.
+    \item \textbf{Busca por Arquivos Go:} O método `find\_go\_files` percorre recursivamente o diretório do projeto em
+        busca de arquivos com a extensão `.go`, ignorando arquivos de teste (`\_test.go`).
+    \item \textbf{Extração de Importações:} O método estático `extract\_imports` utiliza expressões regulares (regex) para analisar o conteúdo de cada arquivo Go e extrair todos os pacotes importados. Ele é projetado para lidar tanto com importações de linha única (`import "fmt"`) quanto com blocos de importação (`import (...)`).
+    \item \textbf{Construção do Grafo:} O método `build\_dependency\_graph` orquestra o processo. Ele primeiro
+        identifica todos os pacotes definidos localmente e depois itera sobre cada arquivo, usando as importações
+        extraídas para construir o `graph` e popular o mapa `in\_degree`.
+\end{enumerate}
+
+\subsubsection{Ordenação Topológica e Detecção de Ciclos (\texttt{topological\_sorting.py})}
+Este módulo implementa a lógica central do processamento.
+\begin{itemize}
+    \item \textbf{Detecção de Ciclos:} Antes de tentar a ordenação, o método `is\_cyclic` é chamado. Ele utiliza um algoritmo de busca em profundidade (DFS) para verificar a existência de ciclos no grafo. Se um ciclo é detectado, o programa informa o usuário e encerra, pois a ordenação topológica é impossível.
+    \item \textbf{Ordenação com Algoritmo de Kahn:} O método `sort\_group` implementa o algoritmo de Kahn, conforme descrito na Seção 2.2.1. Em vez de retornar uma lista linear, nossa implementação retorna uma lista de listas (`list[list[str]]`), onde cada lista interna representa uma "camada" de pacotes que podem ser processados/compilados em paralelo, pois suas dependências da camada anterior já foram resolvidas.
+\end{itemize}
+
+\subsubsection{Visualização dos Resultados (\texttt{render.py})}
+Para facilitar a compreensão da estrutura de dependências, um módulo de visualização foi criado utilizando a biblioteca `graphviz`.
+\begin{enumerate}
+    \item O grafo é renderizado como um `Digraph` com orientação da esquerda para a direita (`rankdir='LR'`).
+    \item Os nós são agrupados em subgrafos com o mesmo `rank`, correspondendo às camadas calculadas pela função `sort\_group`. Isso alinha visualmente os pacotes que estão no mesmo nível da ordenação topológica.
+    \item Os nós são coloridos de forma distinta: pacotes locais (parte do projeto analisado) têm uma cor, e pacotes externos (bibliotecas padrão ou de terceiros) têm outra. Isso ajuda a diferenciar o código do projeto de suas dependências externas.
+    \item O resultado final é um arquivo SVG embutido em um HTML, que é automaticamente aberto no navegador, proporcionando uma visualização limpa e interativa.
+\end{enumerate}
+
 \begin{figure}[ht]
 \centering
 \includegraphics[width=.3\textwidth]{fig2.jpg}
