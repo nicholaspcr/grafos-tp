@@ -215,23 +215,20 @@ O grafo visual gerado pelo `render.py` reflete essa estrutura, como pode ser vis
 
 A clareza da visualização (Figura \ref{fig:grafoExemplo}) e a ordem explícita dos pacotes fornecem ao desenvolvedor uma visão imediata da arquitetura do projeto, facilitando a depuração de problemas de inicialização e a compreensão do fluxo de compilação.
 
+\section{Conclusão}
 
-\section{Imagens}
+Este trabalho apresentou uma solução computacional para o problema de gestão de dependências em projetos Go, alinhado aos objetivos da disciplina de Ferramenta de Processamento de Dados com Grafos. A modelagem do sistema de pacotes como um grafo direcionado provou-se eficaz, e a aplicação da ordenação topológica através do algoritmo de Kahn permitiu não apenas determinar a sequência de compilação segura, mas também estruturar a visualização dos resultados de forma intuitiva.
 
-Todas as imagens e ilustrações devem ser em preto e branco, ou tons de cinza,
-exceto para os artigos que estarão disponíveis eletronicamente (em CD-ROMs,
-internet, etc.). A resolução da imagem no papel deve ser de cerca de 600 dpi para
-imagens em preto e branco, e 150-300 dpi para imagens em tons de cinza. Não inclua
-imagens com resolução excessiva, pois elas podem levar horas para imprimir, sem qualquer
-diferença visível no resultado.
+A ferramenta desenvolvida cumpre com sucesso os requisitos propostos: ela analisa o código-fonte, constrói um modelo em grafo, processa-o com algoritmos relevantes e apresenta os resultados de forma clara. A capacidade de detectar ciclos de dependência antes da compilação é um recurso valioso para evitar erros comuns em projetos de grande porte.
 
-\section{Referências}
-
-As referências bibliográficas devem ser inequívocas e uniformes. Recomendamos fornecer
-as referências dos nomes dos autores entre colchetes, por exemplo, \cite{knuth:84},
-\cite{boulic:91}, e \cite{smith:99}. As referências devem ser listadas usando fonte de tamanho 12, com 6 pontos de espaço
-antes de cada referência. A primeira linha de cada referência não deve ser
-recuada, enquanto as subsequentes devem ser recuadas em 0,5 cm.
+\subsection{Trabalhos Futuros}
+Apesar de funcional, a ferramenta atual pode ser estendida de várias maneiras. Como trabalhos futuros, sugere-se:
+\begin{itemize}
+    \item \textbf{Análise de Desempenho:} Testar a ferramenta em repositórios de código aberto extremamente grandes (e.g., Kubernetes, Docker) para avaliar sua performance e escalabilidade.
+    \item \textbf{Parser Avançado:} Substituir as expressões regulares por um parser de Abstract Syntax Tree (AST) da linguagem Go, o que tornaria a extração de importações mais robusta e precisa.
+    \item \textbf{Integração com IDEs:} Desenvolver um plugin para editores de código populares, como o Visual Studio Code, que exiba o grafo de dependências e alerte sobre ciclos em tempo real.
+    \item \textbf{Análise de "Peso" das Arestas:} Estender o modelo para incluir métricas nas arestas, como o número de funções ou tipos utilizados de um pacote dependente, para identificar acoplamentos fortes.
+\end{itemize}
 
 \bibliographystyle{sbc}
 \bibliography{sbc-template.bib}
