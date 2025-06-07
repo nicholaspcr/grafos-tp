@@ -11,6 +11,7 @@
 \usepackage{amsmath} % Para ambientes matemáticos
 \usepackage{listings} % Para blocos de código
 \usepackage{xcolor} % Para cores no código
+\usepackage{placeins}
 
 % Configuração para blocos de código
 \definecolor{codegreen}{rgb}{0,0.6,0}
@@ -78,10 +79,22 @@ Esta seção aborda os conceitos fundamentais que sustentam o desenvolvimento de
 \subsection{Teoria dos Grafos}
 Um grafo $G = (V, E)$ é uma estrutura matemática usada para modelar relações entre objetos, consistindo em um conjunto de vértices $V$ e um conjunto de arestas $E$ que conectam pares de vértices \cite{clrs}. Em um \textbf{grafo direcionado} (ou digrafo), as arestas são pares ordenados de vértices $(u, v)$, indicando uma ligação de $u$ para $v$. Um \textbf{caminho} em um digrafo é uma sequência de vértices onde cada vértice consecutivo na sequência está conectado por uma aresta direcionada. Um \textbf{ciclo} é um caminho que começa e termina no mesmo vértice.
 
-Um \textbf{Grafo Acíclico Direcionado (DAG)} é um grafo direcionado que não contém ciclos. Esta estrutura é fundamental para modelar problemas de pré-requisitos, como as dependências de software, onde um ciclo representaria uma condição ilógica (e.g., A depende de B, e B depende de A).
+Um \textbf{Grafo Acíclico Direcionado (DAG)} é um grafo direcionado que não contém ciclos. Esta estrutura é fundamental
+para modelar problemas de pré-requisitos, como as dependências de software, onde um ciclo representaria uma condição ilógica (e.g., A depende de B, e B depende de A).
 
 \subsection{Ordenação Topológica}
-A ordenação topológica de um DAG é uma ordenação linear de seus vértices tal que para toda aresta direcionada $(u, v)$, o vértice $u$ vem antes de $v$ na ordenação \cite{clrs}. Se o grafo contiver um ciclo, não há ordenação topológica possível, o que, no nosso contexto, corresponde a um erro de "dependência cíclica". Existem duas abordagens principais para a ordenação topológica:
+A ordenação topológica de um DAG é uma ordenação linear de seus vértices tal que para toda aresta direcionada $(u, v)$, o vértice $u$ vem antes de $v$ na ordenação \cite{clrs}. Se o grafo contiver um ciclo, não há ordenação topológica possível, o que, no nosso contexto, corresponde a um erro de "dependência cíclica". A Figura~\ref{fig:grafo-ciclico} ilustra um exemplo de um grafo com dependências cíclicas, onde é impossível determinar uma ordem de precedência linear entre os nós.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1\textwidth]{examples/cycle.png}
+    \caption{Exemplo de um grafo com uma dependência cíclica. O pacote `definition` depende de `foo` e `bar`, que, por sua vez, dependem de `definition`. Essa estrutura impede a criação de uma ordenação topológica.}
+    \label{fig:grafo-ciclico}
+\end{figure}
+
+\FloatBarrier
+
+Existem duas abordagens principais para a ordenação topológica:
 
 \begin{itemize}
     \item \textbf{Baseada em Busca em Profundidade (DFS):} Este algoritmo realiza uma busca em profundidade no grafo. A ordenação topológica é a ordem inversa da finalização dos vértices. É eficiente, mas menos intuitivo para visualizar camadas de dependência.
@@ -98,7 +111,7 @@ S = Conjunto de todos os nos sem arestas de entrada (in-degree 0)
 enquanto S nao esta vazio faca
   remover um no n de S
   adicionar n em L
-  
+
   para cada no m com uma aresta e de n para m faca
     remover aresta e do grafo
     se m nao tem mais arestas de entrada entao
@@ -130,6 +143,9 @@ A arquitetura geral da ferramenta, que segue o fluxo de extração, processament
     \caption{Diagrama de componentes da ferramenta, ilustrando a interação entre os módulos de extração (\texttt{BuildDependencyGraph}), processamento (\texttt{Topological}) e renderização (\texttt{render\_graph}).}
     \label{fig:diagrama-classes}
 \end{figure}
+
+\FloatBarrier
+
 
 A ferramenta é composta por três módulos principais, conforme os arquivos \texttt{dependency\_graph\_builder.py}, \texttt{topological\_sorting.py} e \texttt{render.py}.
 
@@ -214,12 +230,12 @@ def render(graph, sorted_nodes, external_packages):
                     s.node(node_name, style='filled', fillcolor='tomato')
                 else:
                     s.node(node_name, style='filled', fillcolor='lightgrey')
-    
+
     # Adiciona as arestas ao grafo
     for node in graph:
         for v in graph[node]:
             dot.edge(node, v)
-    
+
     # Gera o arquivo final (SVG embutido em HTML)
     ...
 \end{lstlisting}
@@ -241,6 +257,8 @@ O primeiro cenário, ilustrado na Figura \ref{fig:grafoExemplo}, representa uma 
 \label{fig:grafoExemplo}
 \end{figure}
 
+\FloatBarrier
+
 \subsubsection{Caso 2: Biblioteca de CLI (Cobra)}
 A Figura \ref{fig:exemplo-2} exibe o grafo de dependências da popular biblioteca `Cobra`, usada para criar aplicações de linha de comando (CLI). A estrutura aqui é mais complexa. Observamos um nó central (`github.com/spf13/cobra`) do qual muitos outros pacotes dependem. Também vemos dependências de pacotes externos como `github.com/spf13/pflag`, que gerencia flags de comando. Este tipo de grafo, com um "hub" central, é típico de bibliotecas de framework, onde um pacote principal oferece a funcionalidade central que é estendida por outros.
 
@@ -251,6 +269,8 @@ A Figura \ref{fig:exemplo-2} exibe o grafo de dependências da popular bibliotec
 \label{fig:exemplo-2}
 \end{figure}
 
+\FloatBarrier
+
 \subsubsection{Caso 3: Biblioteca de Utilitários (Posener/CMD)}
 A Figura \ref{fig:exemplo-3} mostra o grafo da biblioteca `github.com/posener/cmd`. Este grafo exibe uma estrutura diferente, mais "larga" e menos profunda que as anteriores. Isso sugere que a biblioteca é uma coleção de utilitários mais ou menos independentes, que compartilham algumas dependências comuns (como o pacote `context`), mas não formam uma hierarquia rígida. A ferramenta revela que a arquitetura é altamente modular e de baixo acoplamento entre seus diferentes componentes.
 
@@ -260,6 +280,8 @@ A Figura \ref{fig:exemplo-3} mostra o grafo da biblioteca `github.com/posener/cm
 \caption{Grafo de dependências da biblioteca `posener/cmd`, exibindo uma arquitetura modular e de baixo acoplamento.}
 \label{fig:exemplo-3}
 \end{figure}
+
+\FloatBarrier
 
 \subsection{Discussão dos Resultados}
 A análise dos três casos demonstra a utilidade da ferramenta para diferentes tipos de projeto. Para aplicações simples, ela valida a arquitetura. Para bibliotecas complexas, ela revela padrões de design, como hubs centrais ou arquiteturas modulares. A capacidade de diferenciar visualmente pacotes internos e externos (coloridos de forma distinta) e de alinhar os pacotes por camada de dependência oferece uma visão imediata sobre a estrutura e a ordem de compilação, facilitando a depuração e o onboarding de novos desenvolvedores.
