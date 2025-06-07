@@ -252,7 +252,7 @@ O primeiro cenário, ilustrado na Figura \ref{fig:grafoExemplo}, representa uma 
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=.75\textwidth]{examples/example.com.png}
+\includegraphics[width=.8\textwidth]{examples/example.com.png}
 \caption{Visualização do grafo de um projeto simples, com dependências lineares.}
 \label{fig:grafoExemplo}
 \end{figure}
@@ -264,21 +264,29 @@ A Figura \ref{fig:exemplo-2} exibe o grafo de dependências da popular bibliotec
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=.6\textwidth]{examples/github.com_spf13_cobra.png}
+\includegraphics[width=1\textwidth]{examples/github.com_spf13_cobra.png}
 \caption{Grafo de dependências da biblioteca `Cobra`, mostrando uma estrutura de hub central.}
 \label{fig:exemplo-2}
 \end{figure}
-
-\FloatBarrier
 
 \subsubsection{Caso 3: Biblioteca de Utilitários (Posener/CMD)}
 A Figura \ref{fig:exemplo-3} mostra o grafo da biblioteca `github.com/posener/cmd`. Este grafo exibe uma estrutura diferente, mais "larga" e menos profunda que as anteriores. Isso sugere que a biblioteca é uma coleção de utilitários mais ou menos independentes, que compartilham algumas dependências comuns (como o pacote `context`), mas não formam uma hierarquia rígida. A ferramenta revela que a arquitetura é altamente modular e de baixo acoplamento entre seus diferentes componentes.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=.6\textwidth]{examples/github.com_posener_cmd.png}
+\includegraphics[width=.8\textwidth]{examples/github.com_posener_cmd.png}
 \caption{Grafo de dependências da biblioteca `posener/cmd`, exibindo uma arquitetura modular e de baixo acoplamento.}
 \label{fig:exemplo-3}
+\end{figure}
+
+\subsubsection{Caso 4: Aplicação Web Simples}
+O quarto e último caso, apresentado na Figura~\ref{fig:exemplo-4}, demonstra o grafo de um servidor web simples construído com o framework `Echo`. Este grafo exibe um padrão de "consumidor". O nó central (`webserver.com`) representa a aplicação principal, e as setas de dependência convergem para ele a partir de múltiplas bibliotecas, como o próprio `Echo` (`github.com/labstack/echo/v4`), pacotes de middleware e pacotes da biblioteca padrão (`net/http`, `log/slog`).
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=.8\textwidth]{examples/webserver.png}
+\caption{Grafo de dependências de um servidor web simples utilizando o framework Echo.}
+\label{fig:exemplo-4}
 \end{figure}
 
 \FloatBarrier
