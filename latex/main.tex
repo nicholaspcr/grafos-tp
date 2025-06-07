@@ -167,33 +167,34 @@ um método de busca em profundidade, `is{\_}cyclic`, é invocado para garantir q
 `sort{\_}group`, mostrado na Listagem \ref{lst:sort-group}, executa o algoritmo de Kahn.
 
 \begin{lstlisting}[language=Python, caption={Trecho do código de ordenação topológica (Kahn).}, label={lst:sort-group}]
-def sort_group(self, graph, in_degree):
+def sort_group(self, graph: defaultdict[str, set], in_degree: defaultdict[str, int]) -> list[str]:
     queue = deque()
-    # Inicia a fila com nos de grau de entrada 0
+    leaves_matrix: list[str] = []
+
+    leaves_nodes = []
     for v in graph:
         if in_degree[v] == 0:
-            queue.append(v)
-    
-    sorted_layers = []
+            leaves_nodes.append(v)
+    queue.append(leaves_nodes)
+
     while queue:
-        # Processa uma camada inteira de nos
-        layer_size = len(queue)
-        current_layer = []
-        for _ in range(layer_size):
-            node = queue.popleft()
-            current_layer.append(node)
-            
-            # Atualiza o grau de entrada dos vizinhos
-            for neighbor in graph[node]:
-                in_degree[neighbor] -= 1
-                if in_degree[neighbor] == 0:
-                    queue.append(neighbor)
-        sorted_layers.append(current_layer)
-        
-    return sorted_layers
+        leaves_list = queue.popleft()
+        leaves_matrix.append(leaves_list)
+        new_leaves = []
+
+        for node in leaves_list:
+            for v in graph[node]:
+                in_degree[v] -= 1
+                if in_degree[v] == 0:
+                    new_leaves.append(v)
+
+        if new_leaves:
+            queue.append(new_leaves)
+
+    return leaves_matrix
 \end{lstlisting}
 
-A implementação utiliza uma `deque` da biblioteca `collections` para uma performance eficiente de enfileirar e desenfileirar. A principal característica desta implementação é o processamento em "camadas", que agrupa todos os nós que podem ser processados em paralelo, formando a base para a visualização hierárquica.
+A implementação utiliza uma `deque` da biblioteca `collections` para uma performance eficiente de enfileirar e desenfileirar. A principal característica desta implementação é o processamento em "camadas", que agrupa todos os nós que podem ser processados, formando a base para a visualização hierárquica.
 
 \subsubsection{Visualização dos Resultados}
 Finalmente, o módulo \texttt{render.py} é responsável por traduzir a estrutura de dados do grafo em uma imagem. A biblioteca `graphviz` \cite{graphviz} foi escolhida para esta tarefa. O trecho de código mais relevante é aquele que agrupa os nós em subgrafos com o mesmo `rank`, como mostra a Listagem \ref{lst:render}.
@@ -235,7 +236,7 @@ O primeiro cenário, ilustrado na Figura \ref{fig:grafoExemplo}, representa uma 
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=1\textwidth]{examples/example.com.png}
+\includegraphics[width=.75\textwidth]{examples/example.com.png}
 \caption{Visualização do grafo de um projeto simples, com dependências lineares.}
 \label{fig:grafoExemplo}
 \end{figure}
@@ -245,7 +246,7 @@ A Figura \ref{fig:exemplo-2} exibe o grafo de dependências da popular bibliotec
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=1\textwidth]{examples/github.com_spf13_cobra.png}
+\includegraphics[width=.6\textwidth]{examples/github.com_spf13_cobra.png}
 \caption{Grafo de dependências da biblioteca `Cobra`, mostrando uma estrutura de hub central.}
 \label{fig:exemplo-2}
 \end{figure}
@@ -255,7 +256,7 @@ A Figura \ref{fig:exemplo-3} mostra o grafo da biblioteca `github.com/posener/cm
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=1\textwidth]{examples/github.com_posener_cmd.png}
+\includegraphics[width=.6\textwidth]{examples/github.com_posener_cmd.png}
 \caption{Grafo de dependências da biblioteca `posener/cmd`, exibindo uma arquitetura modular e de baixo acoplamento.}
 \label{fig:exemplo-3}
 \end{figure}
