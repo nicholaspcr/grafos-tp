@@ -64,11 +64,12 @@ Dependency management is a challenge in modern software. This paper introduces a
 
 \section{Introdução}
 
-O desenvolvimento de software contemporâneo é caracterizado pela modularidade e reutilização de código, resultando em sistemas compostos por um grande número de componentes interdependentes. A gestão dessa rede de dependências é um desafio central na engenharia de software. Falhas nesse gerenciamento podem levar a erros de compilação, comportamento inesperado em tempo de execução e dificuldades na manutenção e evolução dos projetos.
 
-A linguagem de programação Go (Golang), desenvolvida pelo Google, possui um sistema de pacotes estático e um compilador que impõem regras estritas sobre as dependências. Uma dessas regras é que as dependências de um pacote devem ser inicializadas antes do próprio pacote. Isso garante a execução correta das funções `init()`, que são utilizadas para configurar o estado inicial de cada pacote. Quando um projeto contém uma dependência cíclica (por exemplo, pacote A importa B e pacote B importa A), o compilador Go gera um erro, pois não é possível determinar uma ordem de inicialização válida.
+O desenvolvimento de software contemporâneo é caracterizado pela modularidade e reutilização de código, resultando em sistemas compostos por um grande número de componentes interdependentes. A gestão dessa rede de dependências é um desafio central na engenharia de software, por vezes referido como "inferno de dependências" \cite{jergensen2011}. Falhas nesse gerenciamento podem levar a erros de compilação, comportamento inesperado e dificuldades na manutenção.
 
-A ordem de inicialização de pacotes em Go pode ser modelada de forma natural como um grafo de dependências direcionado acíclico (DAG). Neste modelo, cada pacote é um vértice e uma diretiva `import` de um pacote A para um pacote B cria uma aresta direcionada de B para A, significando que A depende de B. A solução para determinar a sequência correta de inicialização é, portanto, encontrar uma ordenação topológica desse grafo.
+A linguagem de programação Go (Golang) possui um sistema de pacotes estático e um compilador que impõem regras estritas sobre as dependências. Uma dessas regras é que as dependências de um pacote devem ser inicializadas antes do próprio pacote \cite{donovan2015go}. Isso garante a execução correta das funções \texttt{init()}, que configuram o estado inicial de cada pacote. Quando um projeto contém uma dependência cíclica, o compilador Go gera um erro, pois não é possível determinar uma ordem de inicialização válida \cite{GoSpec}.
+
+A ordem de inicialização de pacotes em Go pode ser modelada como um grafo de dependências direcionado acíclico (DAG). A solução para determinar a sequência correta é, portanto, encontrar uma ordenação topológica desse grafo \cite{clrs}. Este trabalho detalha uma ferramenta que aplica esses conceitos para analisar projetos Go.
 
 Este trabalho se enquadra na proposta de "Gestão de Conflitos em Sistemas de Dependência", focando na modelagem, detecção de ciclos e execução segura baseada em ordenação topológica. Para isso, foi desenvolvida uma ferramenta em Python que:
 \begin{itemize}
@@ -100,29 +101,37 @@ A ordenação topológica de um grafo direcionado é uma ordenação linear de s
 A existência de uma ordenação topológica no nosso grafo de dependências corresponde a uma sequência válida de inicialização dos pacotes Go. Se o grafo contiver um ciclo, não há ordenação topológica possível, o que corresponde a um erro de "dependência cíclica" no compilador Go.
 
 \subsubsection{Algoritmo de Kahn}
-Existem vários algoritmos para encontrar uma ordenação topológica. O escolhido para este trabalho foi o \textbf{algoritmo de Kahn}, devido à sua capacidade de processar os vértices em "camadas", o que é ideal para a visualização proposta. O algoritmo funciona da seguinte maneira:
-\begin{enumerate}
-    \item Calcular o grau de entrada (in-degree) de todos os vértices do grafo.
-    \item Inicializar uma fila com todos os vértices que possuem grau de entrada igual a zero. Estes são os pacotes sem dependências.
-    \item Enquanto a fila não estiver vazia:
-    \begin{enumerate}
-        \item Remover um vértice $n$ da fila e adicioná-lo à lista de ordenação topológica.
-        \item Para cada vértice $m$ que é vizinho de $n$ (ou seja, para cada pacote que depende de $n$):
-        \begin{enumerate}
-            \item Decrementar o grau de entrada de $m$.
-            \item Se o grau de entrada de $m$ se tornar zero, adicioná-lo à fila.
-        \end{enumerate}
-    \end{enumerate}
-    \item Ao final, se o número de vértices na lista de ordenação topológica for igual ao número total de vértices do grafo, a ordenação foi bem-sucedida. Caso contrário, o grafo contém pelo menos um ciclo.
-\end{enumerate}
+
+O algoritmo de Kahn, proposto em 1962, é uma abordagem clássica para a ordenação topológica \cite{kahn1962}. Ele funciona de maneira iterativa, processando vértices que não possuem mais dependências não resolvidas. O algoritmo baseia-se no cálculo do grau de entrada (\textit{in-degree}) de cada vértice e utiliza uma fila para armazenar os vértices com grau de entrada zero. Se, ao final, o número de vértices na ordenação for menor que o total de vértices do grafo, um ciclo foi detectado \cite{kahn1962}.
+
 A implementação deste algoritmo pode ser vista no arquivo `topological{\_}sorting.py`.
 
 \subsection{Sistema de Pacotes e Módulos em Go}
-Go organiza o código em pacotes, que são coleções de arquivos-fonte no mesmo diretório. O `go.mod` é um arquivo na raiz do projeto que define o caminho do módulo, que serve como um prefixo para todos os pacotes dentro do projeto, e também gerencia as dependências externas.
+
+Go organiza o código em pacotes, e a diretiva \texttt{import} é usada para declarar dependências \cite{donovan2015go}. A especificação da linguagem determina que a ordem de inicialização dos pacotes siga a ordem de dependência, um processo que é, na prática, uma ordenação topológica. A função \texttt{init} de um pacote é executada somente após todas as suas dependências terem sido inicializadas \cite{GoSpec}.
+
+
+O `go.mod` é um arquivo na raiz do projeto que define o caminho do módulo, que serve como um prefixo para todos os pacotes dentro do projeto, e também gerencia as dependências externas.
 
 A diretiva `import` é usada para declarar dependências entre pacotes. Como mencionado, a ordem de execução das funções `init()` de cada pacote segue a ordem de dependência, exigindo uma resolução que é, na prática, uma ordenação topológica.
 
+\begin{lstlisting}[language=Go, caption={Exemplo de um bloco de importações em Go.}, label={lst:go-imports}]
+import (
+    "fmt"
+    "log"
+    "net/http"
+
+    "github.com/gorilla/mux"
+    "meuprojeto/internal/database"
+)
+\end{lstlisting}
+
+\begin{lstlisting}[language=Go, caption={Exemplo de importação inline em Go.}, label={lst:go-imports}]
+import "fmt"
+\end{lstlisting}
+
 \section{Modelagem e Desenvolvimento da Ferramenta}
+
 Esta seção descreve a arquitetura e os componentes da ferramenta desenvolvida, detalhando como o problema de análise de
 dependências foi modelado e implementado em Python. A ferramenta é composta por três módulos principais, conforme os
 arquivos `dependency{\_}graph{\_}builder.py`, `topological{\_}sorting.py` e `render.py`.
@@ -151,21 +160,6 @@ Este módulo é responsável por ler o sistema de arquivos e construir a represe
         extraídas para construir o `graph` e popular o mapa `in\_degree`.
 \end{enumerate}
 
-\begin{lstlisting}[language=Go, caption={Exemplo de um bloco de importações em Go.}, label={lst:go-imports}]
-import (
-    "fmt"
-    "log"
-    "net/http"
-
-    "github.com/gorilla/mux"
-    "meuprojeto/internal/database"
-)
-\end{lstlisting}
-
-\begin{lstlisting}[language=Go, caption={Exemplo de importação inline em Go.}, label={lst:go-imports}]
-import "fmt"
-\end{lstlisting}
-
 \subsubsection{Ordenação Topológica e Detecção de Ciclos (\texttt{topological\_sorting.py})}
 Este módulo implementa a lógica central do processamento.
 \begin{itemize}
@@ -174,7 +168,9 @@ Este módulo implementa a lógica central do processamento.
 \end{itemize}
 
 \subsubsection{Visualização dos Resultados (\texttt{render.py})}
-Para facilitar a compreensão da estrutura de dependências, um módulo de visualização foi criado utilizando a biblioteca `graphviz`.
+
+Para facilitar a compreensão da estrutura de dependências, um módulo de visualização foi criado utilizando a biblioteca \texttt{graphviz} em Python, que por sua vez é uma interface para a poderosa ferramenta de visualização de grafos Graphviz \cite{graphviz}.
+
 \begin{enumerate}
     \item O grafo é renderizado como um `Digraph` com orientação da esquerda para a direita (`rankdir='LR'`).
     \item Os nós são agrupados em subgrafos com o mesmo `rank`, correspondendo às camadas calculadas pela função `sort\_group`. Isso alinha visualmente os pacotes que estão no mesmo nível da ordenação topológica.
@@ -231,7 +227,7 @@ A clareza da visualização (Figura \ref{fig:grafoExemplo}) e a ordem explícita
 
 \section{Conclusão}
 
-Este trabalho apresentou uma solução computacional para o problema de gestão de dependências em projetos Go, alinhado aos objetivos da disciplina de Ferramenta de Processamento de Dados com Grafos. A modelagem do sistema de pacotes como um grafo direcionado provou-se eficaz, e a aplicação da ordenação topológica através do algoritmo de Kahn permitiu não apenas determinar a sequência de compilação segura, mas também estruturar a visualização dos resultados de forma intuitiva.
+Este trabalho apresentou uma solução computacional para o problema de gestão de dependências em projetos Go, alinhado aos objetivos da disciplina de Ferramenta de Processamento de Dados com Grafos. A modelagem do sistema de pacotes como um grafo direcionado provou-se eficaz, e a aplicação da ordenação topológica através do algoritmo de Kahn \cite{kahn1962} permitiu não apenas determinar a sequência de compilação segura, mas também estruturar a visualização dos resultados de forma intuitiva.
 
 A ferramenta desenvolvida cumpre com sucesso os requisitos propostos: ela analisa o código-fonte, constrói um modelo em grafo, processa-o com algoritmos relevantes e apresenta os resultados de forma clara. A capacidade de detectar ciclos de dependência antes da compilação é um recurso valioso para evitar erros comuns em projetos de grande porte.
 
