@@ -64,203 +64,215 @@ Dependency management is a challenge in modern software. This paper introduces a
 
 \section{Introdução}
 
-
 O desenvolvimento de software contemporâneo é caracterizado pela modularidade e reutilização de código, resultando em sistemas compostos por um grande número de componentes interdependentes. A gestão dessa rede de dependências é um desafio central na engenharia de software, por vezes referido como "inferno de dependências" \cite{jergensen2011}. Falhas nesse gerenciamento podem levar a erros de compilação, comportamento inesperado e dificuldades na manutenção.
 
 A linguagem de programação Go (Golang) possui um sistema de pacotes estático e um compilador que impõem regras estritas sobre as dependências. Uma dessas regras é que as dependências de um pacote devem ser inicializadas antes do próprio pacote \cite{donovan2015go}. Isso garante a execução correta das funções \texttt{init()}, que configuram o estado inicial de cada pacote. Quando um projeto contém uma dependência cíclica, o compilador Go gera um erro, pois não é possível determinar uma ordem de inicialização válida \cite{GoSpec}.
 
-A ordem de inicialização de pacotes em Go pode ser modelada como um grafo de dependências direcionado acíclico (DAG). A solução para determinar a sequência correta é, portanto, encontrar uma ordenação topológica desse grafo \cite{clrs}. Este trabalho detalha uma ferramenta que aplica esses conceitos para analisar projetos Go.
+A ordem de inicialização de pacotes em Go pode ser modelada como um grafo de dependências direcionado acíclico (DAG). A solução para determinar a sequência correta é, portanto, encontrar uma ordenação topológica desse grafo \cite{clrs}. Este trabalho detalha uma ferramenta que aplica esses conceitos para analisar projetos Go. Este trabalho se enquadra na proposta de "Gestão de Conflitos em Sistemas de Dependência", focando na modelagem, detecção de ciclos e execução segura baseada em ordenação topológica. Para isso, foi desenvolvida uma ferramenta em Python que analisa os arquivos, constrói o grafo de dependências, aplica o algoritmo de Kahn e gera uma visualização gráfica do resultado.
 
-Este trabalho se enquadra na proposta de "Gestão de Conflitos em Sistemas de Dependência", focando na modelagem, detecção de ciclos e execução segura baseada em ordenação topológica. Para isso, foi desenvolvida uma ferramenta em Python que:
-\begin{itemize}
-    \item Analisa recursivamente os arquivos de um projeto Go para extrair as relações de importação.
-    \item Constrói um grafo de dependências direcionado a partir dessas relações.
-    \item Aplica o algoritmo de Kahn para realizar a ordenação topológica dos pacotes.
-    \item Gera uma visualização gráfica do grafo de dependências, destacando a ordem de inicialização em camadas.
-\end{itemize}
-
-O restante deste artigo está organizado da seguinte forma: a Seção 2 apresenta a fundamentação teórica sobre grafos, ordenação topológica e o sistema de pacotes do Go. A Seção 3 detalha a modelagem do problema e a arquitetura da ferramenta desenvolvida. A Seção 4 apresenta os experimentos realizados e discute os resultados obtidos. Finalmente, a Seção 5 conclui o trabalho e aponta direções para desenvolvimentos futuros.
+O restante deste artigo está organizado da seguinte forma: a Seção 2 apresenta a fundamentação teórica. A Seção 3 detalha a modelagem e a arquitetura da ferramenta. A Seção 4 apresenta estudos de caso e discute os resultados. Finalmente, a Seção 5 conclui o trabalho.
 
 \section{Fundamentação Teórica}
-Esta seção aborda os conceitos fundamentais que sustentam o desenvolvimento deste trabalho, incluindo a teoria dos grafos, o algoritmo de ordenação topológica e as particularidades do sistema de pacotes da linguagem Go.
+Esta seção aborda os conceitos fundamentais que sustentam o desenvolvimento deste trabalho.
 
 \subsection{Teoria dos Grafos}
-Um grafo $G = (V, E)$ é uma estrutura matemática usada para modelar relações entre objetos. Consiste em um conjunto de vértices $V$ (ou nós) e um conjunto de arestas $E$ que conectam pares de vértices. Em um \textbf{grafo direcionado} (ou digrafo), as arestas têm uma direção, sendo representadas por pares ordenados de vértices $(u, v)$, indicando uma ligação de $u$ para $v$.
+Um grafo $G = (V, E)$ é uma estrutura matemática usada para modelar relações entre objetos, consistindo em um conjunto de vértices $V$ e um conjunto de arestas $E$ que conectam pares de vértices \cite{clrs}. Em um \textbf{grafo direcionado} (ou digrafo), as arestas são pares ordenados de vértices $(u, v)$, indicando uma ligação de $u$ para $v$. Um \textbf{caminho} em um digrafo é uma sequência de vértices onde cada vértice consecutivo na sequência está conectado por uma aresta direcionada. Um \textbf{ciclo} é um caminho que começa e termina no mesmo vértice.
 
-No contexto deste trabalho, o modelo utilizado é um grafo direcionado, onde:
-\begin{itemize}
-    \item \textbf{Vértices (V):} Representam os pacotes do projeto Go, tanto os locais (definidos no projeto) quanto os externos (bibliotecas padrão ou de terceiros).
-    \item \textbf{Arestas (E):} Uma aresta direcionada $(u, v)$ existe se o pacote $v$ importa o pacote $u$. Isso significa que $u$ é uma dependência de $v$.
-\end{itemize}
-
-Uma métrica importante em grafos direcionados é o \textbf{grau de entrada (in-degree)} de um vértice, que corresponde ao número de arestas que chegam a ele. Um vértice com grau de entrada zero não possui dependências dentro do grafo.
+Um \textbf{Grafo Acíclico Direcionado (DAG)} é um grafo direcionado que não contém ciclos. Esta estrutura é fundamental para modelar problemas de pré-requisitos, como as dependências de software, onde um ciclo representaria uma condição ilógica (e.g., A depende de B, e B depende de A).
 
 \subsection{Ordenação Topológica}
-A ordenação topológica de um grafo direcionado é uma ordenação linear de seus vértices tal que para toda aresta direcionada $(u, v)$, o vértice $u$ vem antes de $v$ na ordenação. Uma ordenação topológica só é possível se, e somente se, o grafo não contiver ciclos direcionados, ou seja, se for um \textbf{Grafo Acíclico Direcionado (DAG)}.
-
-A existência de uma ordenação topológica no nosso grafo de dependências corresponde a uma sequência válida de inicialização dos pacotes Go. Se o grafo contiver um ciclo, não há ordenação topológica possível, o que corresponde a um erro de "dependência cíclica" no compilador Go.
-
-\subsubsection{Algoritmo de Kahn}
-
-O algoritmo de Kahn, proposto em 1962, é uma abordagem clássica para a ordenação topológica \cite{kahn1962}. Ele funciona de maneira iterativa, processando vértices que não possuem mais dependências não resolvidas. O algoritmo baseia-se no cálculo do grau de entrada (\textit{in-degree}) de cada vértice e utiliza uma fila para armazenar os vértices com grau de entrada zero. Se, ao final, o número de vértices na ordenação for menor que o total de vértices do grafo, um ciclo foi detectado \cite{kahn1962}.
-
-A implementação deste algoritmo pode ser vista no arquivo `topological{\_}sorting.py`.
-
-\subsection{Sistema de Pacotes e Módulos em Go}
-
-Go organiza o código em pacotes, e a diretiva \texttt{import} é usada para declarar dependências \cite{donovan2015go}. A especificação da linguagem determina que a ordem de inicialização dos pacotes siga a ordem de dependência, um processo que é, na prática, uma ordenação topológica. A função \texttt{init} de um pacote é executada somente após todas as suas dependências terem sido inicializadas \cite{GoSpec}.
-
-
-O `go.mod` é um arquivo na raiz do projeto que define o caminho do módulo, que serve como um prefixo para todos os pacotes dentro do projeto, e também gerencia as dependências externas.
-
-A diretiva `import` é usada para declarar dependências entre pacotes. Como mencionado, a ordem de execução das funções `init()` de cada pacote segue a ordem de dependência, exigindo uma resolução que é, na prática, uma ordenação topológica.
-
-\begin{lstlisting}[language=Go, caption={Exemplo de um bloco de importações em Go.}, label={lst:go-imports}]
-import (
-    "fmt"
-    "log"
-    "net/http"
-
-    "github.com/gorilla/mux"
-    "meuprojeto/internal/database"
-)
-\end{lstlisting}
-
-\begin{lstlisting}[language=Go, caption={Exemplo de importação inline em Go.}, label={lst:go-imports}]
-import "fmt"
-\end{lstlisting}
-
-\section{Modelagem e Desenvolvimento da Ferramenta}
-
-Esta seção descreve a arquitetura e os componentes da ferramenta desenvolvida, detalhando como o problema de análise de
-dependências foi modelado e implementado em Python. A ferramenta é composta por três módulos principais, conforme os
-arquivos `dependency{\_}graph{\_}builder.py`, `topological{\_}sorting.py` e `render.py`.
-
-\subsection{Modelagem do Grafo de Dependências}
-O problema foi modelado como um grafo direcionado $G = (V, E)$, conforme descrito na Seção 2.1. A estrutura de dados escolhida para representar o grafo foi um dicionário (hash map) em Python, onde as chaves são os nomes dos pacotes (vértices) e os valores são conjuntos contendo os pacotes que dependem deles (vizinhos).
+A ordenação topológica de um DAG é uma ordenação linear de seus vértices tal que para toda aresta direcionada $(u, v)$, o vértice $u$ vem antes de $v$ na ordenação \cite{clrs}. Se o grafo contiver um ciclo, não há ordenação topológica possível, o que, no nosso contexto, corresponde a um erro de "dependência cíclica". Existem duas abordagens principais para a ordenação topológica:
 
 \begin{itemize}
-    \item \textbf{`graph = defaultdict(set)`:} Representa as arestas. `graph[u]` contém um conjunto de vértices `{v1, v2, ...}` para os quais existe uma aresta $(u, v1)$, $(u, v2)$, etc.
-    \item \textbf{`in\_degree = defaultdict(int)`:} Armazena o grau de entrada de cada vértice, essencial para o algoritmo de Kahn.
+    \item \textbf{Baseada em Busca em Profundidade (DFS):} Este algoritmo realiza uma busca em profundidade no grafo. A ordenação topológica é a ordem inversa da finalização dos vértices. É eficiente, mas menos intuitivo para visualizar camadas de dependência.
+    \item \textbf{Algoritmo de Kahn:} Baseado na remoção sucessiva de vértices sem dependências de entrada. Foi o escolhido para este trabalho por sua capacidade de agrupar os nós em "camadas", o que é ideal para a visualização proposta.
 \end{itemize}
 
-\subsection{Componentes da Ferramenta}
+\subsubsection{Algoritmo de Kahn}
+O algoritmo de Kahn, proposto em 1962, é uma abordagem clássica para a ordenação topológica \cite{kahn1962}. Ele funciona de maneira iterativa, processando vértices que não possuem mais dependências não resolvidas. O algoritmo baseia-se no cálculo do grau de entrada (\textit{in-degree}) de cada vértice e utiliza uma fila para armazenar os vértices com grau de entrada zero. A Listagem \ref{lst:kahn-pseudocode} apresenta o pseudocódigo do algoritmo.
 
+\begin{lstlisting}[language={}, caption={Pseudocódigo do Algoritmo de Kahn}, label={lst:kahn-pseudocode}]
+L = Lista vazia que contera os elementos ordenados
+S = Conjunto de todos os nos sem arestas de entrada (in-degree 0)
+
+enquanto S nao esta vazio faca
+  remover um no n de S
+  adicionar n em L
+  
+  para cada no m com uma aresta e de n para m faca
+    remover aresta e do grafo
+    se m nao tem mais arestas de entrada entao
+      inserir m em S
+
+se o grafo ainda contem arestas entao
+  retornar erro (grafo tem pelo menos um ciclo)
+senao
+  retornar L (a ordenacao topologica)
+\end{lstlisting}
+
+Se, ao final, a lista `L` contém todos os vértices do grafo, a ordenação foi bem-sucedida. Caso contrário, o grafo possui um ciclo, e o algoritmo falha em processar todos os nós \cite{kahn1962}.
+
+\subsection{Sistema de Pacotes e Módulos em Go}
+Go organiza o código em pacotes, e a diretiva \texttt{import} é usada para declarar dependências \cite{donovan2015go}. A especificação da linguagem determina que a ordem de inicialização dos pacotes siga a ordem de dependência, um processo que é, na prática, uma ordenação topológica. A função \texttt{init} de um pacote é executada somente após todas as suas dependências terem sido inicializadas \cite{GoSpec}. O arquivo `go.mod` na raiz do projeto define o módulo e suas dependências diretas, sendo crucial para a resolução de pacotes.
+
+\section{Modelagem e Desenvolvimento da Ferramenta}
+Esta seção descreve a arquitetura e os componentes da ferramenta desenvolvida, detalhando como o problema de análise de dependências foi modelado e implementado em Python.
+
+\subsection{Modelagem do Grafo de Dependências}
+O problema foi modelado como um grafo direcionado $G = (V, E)$, onde $V$ é o conjunto de pacotes Go e uma aresta $(u, v)$ significa que o pacote $v$ importa o pacote $u$ (ou seja, $v$ depende de $u$). Essa direção é fundamental para que a ordenação topológica resulte em uma lista onde as dependências vêm antes dos dependentes. A estrutura de dados escolhida foi um dicionário (hash map) em Python, por sua eficiência em tempo de acesso.
+
+\subsection{Componentes da Ferramenta}
 A arquitetura geral da ferramenta, que segue o fluxo de extração, processamento e visualização, está ilustrada no diagrama de componentes da Figura~\ref{fig:diagrama-classes}.
 
-\begin{figure}[ht]
+\begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.9\textwidth]{images/diagrama_classes.png}
+    \includegraphics[width=0.75\textwidth]{images/diagrama_classes.png}
     \caption{Diagrama de componentes da ferramenta, ilustrando a interação entre os módulos de extração (\texttt{BuildDependencyGraph}), processamento (\texttt{Topological}) e renderização (\texttt{render\_graph}).}
     \label{fig:diagrama-classes}
 \end{figure}
 
+A ferramenta é composta por três módulos principais, conforme os arquivos \texttt{dependency\_graph\_builder.py}, \texttt{topological\_sorting.py} e \texttt{render.py}.
 
-\subsubsection{Extração e Construção do Grafo (\texttt{dependency\_graph\_builder.py})}
-Este módulo é responsável por ler o sistema de arquivos e construir a representação do grafo. O processo é o seguinte:
-\begin{enumerate}
-    \item \textbf{Identificação do Módulo:} A classe `BuildDependencyGraph` inicia lendo o arquivo `go.mod` para determinar o prefixo do módulo do projeto. Isso é crucial para nomear corretamente os pacotes locais.
-    \item \textbf{Busca por Arquivos Go:} O método `find\_go\_files` percorre recursivamente o diretório do projeto em
-        busca de arquivos com a extensão `.go`, ignorando arquivos de teste (`\_test.go`).
-    \item \textbf{Extração de Importações:} O método estático `extract\_imports` utiliza expressões regulares (regex) para analisar o conteúdo de cada arquivo Go e extrair todos os pacotes importados. Ele é projetado para lidar tanto com importações de linha única (`import "fmt"`) quanto com blocos de importação (`import (...)`).
-        % TODO: Adicionar referência a exemplos de código adicionado.
-    \item \textbf{Construção do Grafo:} O método `build\_dependency\_graph` orquestra o processo. Ele primeiro
-        identifica todos os pacotes definidos localmente e depois itera sobre cada arquivo, usando as importações
-        extraídas para construir o `graph` e popular o mapa `in\_degree`.
-\end{enumerate}
+\subsubsection{Extração e Construção do Grafo}
+A extração de dependências é o primeiro passo e é implementada no módulo \texttt{dependency\_graph\_builder.py}. A lógica central está na função \texttt{extract\_imports}, mostrada na Listagem~\ref{lst:extract-imports}, que utiliza expressões regulares para analisar o conteúdo de cada arquivo Go.
 
-\subsubsection{Ordenação Topológica e Detecção de Ciclos (\texttt{topological\_sorting.py})}
-Este módulo implementa a lógica central do processamento.
-\begin{itemize}
-    \item \textbf{Detecção de Ciclos:} Antes de tentar a ordenação, o método `is\_cyclic` é chamado. Ele utiliza um algoritmo de busca em profundidade (DFS) para verificar a existência de ciclos no grafo. Se um ciclo é detectado, o programa informa o usuário e encerra, pois a ordenação topológica é impossível.
-    \item \textbf{Ordenação com Algoritmo de Kahn:} O método `sort\_group` implementa o algoritmo de Kahn, conforme descrito na Seção 2.2.1. Em vez de retornar uma lista linear, nossa implementação retorna uma lista de listas (`list[list[str]]`), onde cada lista interna representa uma "camada" de pacotes que podem ser processados/compilados em paralelo, pois suas dependências da camada anterior já foram resolvidas.
-\end{itemize}
+\begin{lstlisting}[language=Python, caption={Trecho do código de extração de importações.}, label={lst:extract-imports}]
+@staticmethod
+def extract_imports(file_path):
+    imports = set()
+    with open(file_path, 'r', encoding='utf-8') as f:
+        content = f.read()
 
-\subsubsection{Visualização dos Resultados (\texttt{render.py})}
+    # Encontra blocos de importacao: import (...)
+    import_block_match = re.search(r'import\s+\((.*?)\)', content, re.DOTALL)
+    if import_block_match:
+        block_content = import_block_match.group(1)
+        found_imports = re.findall(r'"([^"]+)"', block_content)
+        for imp in found_imports:
+            imports.add(imp)
 
-Para facilitar a compreensão da estrutura de dependências, um módulo de visualização foi criado utilizando a biblioteca \texttt{graphviz} em Python, que por sua vez é uma interface para a poderosa ferramenta de visualização de grafos Graphviz \cite{graphviz}.
+    # Encontra importacoes de linha unica: import "..."
+    single_imports = re.findall(r'import\s+"([^"]+)"', content)
+    for imp in single_imports:
+        imports.add(imp)
 
-\begin{enumerate}
-    \item O grafo é renderizado como um `Digraph` com orientação da esquerda para a direita (`rankdir='LR'`).
-    \item Os nós são agrupados em subgrafos com o mesmo `rank`, correspondendo às camadas calculadas pela função `sort\_group`. Isso alinha visualmente os pacotes que estão no mesmo nível da ordenação topológica.
-    \item Os nós são coloridos de forma distinta: pacotes locais (parte do projeto analisado) têm uma cor, e pacotes externos (bibliotecas padrão ou de terceiros) têm outra. Isso ajuda a diferenciar o código do projeto de suas dependências externas.
-    \item O resultado final é um arquivo SVG embutido em um HTML, que é automaticamente aberto no navegador, proporcionando uma visualização limpa e interativa.
-\end{enumerate}
+    return imports
+\end{lstlisting}
 
-\section{Experimentos e Resultados}
-Para validar a ferramenta, foi realizado um experimento com um projeto Go hipotético, cuja estrutura de dependências é complexa o suficiente para demonstrar a eficácia da abordagem.
+Esta abordagem com duas expressões regulares distintas garante que tanto importações de linha única quanto blocos de importação sejam corretamente identificados. Embora eficaz, o uso de regex pode ser frágil a formatações de código muito atípicas.
 
-\subsection{Cenário de Teste}
-Consideremos um projeto hipotético de um e-commerce com a seguinte estrutura de pacotes e dependências:
+\subsubsection{Ordenação Topológica e Detecção de Ciclos}
+Após a construção do grafo, o módulo \texttt{topological\_sorting.py} implementa a lógica de ordenação. Primeiramente,
+um método de busca em profundidade, `is{\_}cyclic`, é invocado para garantir que o grafo é um DAG. Em seguida, o método
+`sort{\_}group`, mostrado na Listagem \ref{lst:sort-group}, executa o algoritmo de Kahn.
 
-\begin{itemize}
-    \item \textbf{`main`:} O ponto de entrada da aplicação. Depende de `api` e `config`.
-    \item \textbf{`api`:} Define os handlers da API. Depende de `services`.
-    \item \textbf{`services`:} Contém a lógica de negócio. Depende de `repository` e `models`.
-    \item \textbf{`repository`:} Camada de acesso a dados. Depende de `models` e de um pacote externo, `github.com/jmoiron/sqlx`.
-    \item \textbf{`models`:} Define as estruturas de dados. Não possui dependências internas.
-    \item \textbf{`config`:} Gerencia as configurações. Depende de um pacote padrão, `os`.
-\end{itemize}
+\begin{lstlisting}[language=Python, caption={Trecho do código de ordenação topológica (Kahn).}, label={lst:sort-group}]
+def sort_group(self, graph, in_degree):
+    queue = deque()
+    # Inicia a fila com nos de grau de entrada 0
+    for v in graph:
+        if in_degree[v] == 0:
+            queue.append(v)
+    
+    sorted_layers = []
+    while queue:
+        # Processa uma camada inteira de nos
+        layer_size = len(queue)
+        current_layer = []
+        for _ in range(layer_size):
+            node = queue.popleft()
+            current_layer.append(node)
+            
+            # Atualiza o grau de entrada dos vizinhos
+            for neighbor in graph[node]:
+                in_degree[neighbor] -= 1
+                if in_degree[neighbor] == 0:
+                    queue.append(neighbor)
+        sorted_layers.append(current_layer)
+        
+    return sorted_layers
+\end{lstlisting}
 
-\subsection{Execução da Ferramenta e Análise dos Resultados}
-Ao executar a ferramenta no diretório deste projeto, a saída da ordenação topológica em camadas, calculada pelo `sort\_group`, seria a seguinte:
+A implementação utiliza uma `deque` da biblioteca `collections` para uma performance eficiente de enfileirar e desenfileirar. A principal característica desta implementação é o processamento em "camadas", que agrupa todos os nós que podem ser processados em paralelo, formando a base para a visualização hierárquica.
 
-\begin{verbatim}
-[
-  ["os", "github.com/jmoiron/sqlx", "models"],
-  ["config", "repository"],
-  ["services"],
-  ["api"],
-  ["main"]
-]
-\end{verbatim}
+\subsubsection{Visualização dos Resultados}
+Finalmente, o módulo \texttt{render.py} é responsável por traduzir a estrutura de dados do grafo em uma imagem. A biblioteca `graphviz` \cite{graphviz} foi escolhida para esta tarefa. O trecho de código mais relevante é aquele que agrupa os nós em subgrafos com o mesmo `rank`, como mostra a Listagem \ref{lst:render}.
 
-Esta saída demonstra a ordem de inicialização correta:
-\begin{enumerate}
-    \item \textbf{Camada 0:} Os pacotes `os`, `github.com/jmoiron/sqlx` e `models` não têm dependências internas no projeto e podem ser inicializados primeiro.
-    \item \textbf{Camada 1:} `config` (que depende de `os`) e `repository` (que depende de `models` e `sqlx`) são os próximos.
-    \item \textbf{Camada 2:} `services` pode ser inicializado, pois suas dependências (`repository` e `models`) já estão resolvidas.
-    \item \textbf{Camada 3 e 4:} `api` e, finalmente, `main` são inicializados em sequência.
-\end{enumerate}
+\begin{lstlisting}[language=Python, caption={Trecho do código de renderização do grafo.}, label={lst:render}]
+def render(graph, sorted_nodes, external_packages):
+    dot = graphviz.Digraph('DependencyGraph')
+    dot.attr(rankdir='LR') # Layout da esquerda para a direita
 
-O grafo visual gerado pelo `render.py` reflete essa estrutura, como pode ser visto na Figura \ref{fig:grafoExemplo}.
+    # Agrupa nos em subgrafos para alinhamento em camadas
+    for layer in sorted_nodes:
+        with dot.subgraph() as s:
+            s.attr(rank='same') # Forca o mesmo rank (alinhamento)
+            for node_name in layer:
+                # Colore nos externos de forma diferente
+                if node_name in external_packages:
+                    s.node(node_name, style='filled', fillcolor='tomato')
+                else:
+                    s.node(node_name, style='filled', fillcolor='lightgrey')
+    
+    # Adiciona as arestas ao grafo
+    for node in graph:
+        for v in graph[node]:
+            dot.edge(node, v)
+    
+    # Gera o arquivo final (SVG embutido em HTML)
+    ...
+\end{lstlisting}
 
-\begin{figure}[ht]
+A diretiva `rank='same'` é o que garante que todos os pacotes em uma mesma camada da ordenação topológica sejam alinhados verticalmente, tornando a hierarquia de dependências clara e intuitiva.
+
+\section{Aplicação e Resultados}
+Para validar a ferramenta e demonstrar sua utilidade, ela foi aplicada a projetos com diferentes níveis de complexidade. Esta seção apresenta uma análise dos grafos gerados.
+
+\subsection{Estudo de Caso com Projetos Reais}
+
+\subsubsection{Caso 1: Aplicação Simples}
+O primeiro cenário, ilustrado na Figura \ref{fig:grafoExemplo}, representa uma aplicação web hipotética. O grafo gerado mostra uma estrutura clara e linear. Na camada mais à esquerda (Camada 0), temos os nós sem dependências internas (`models`, `os`, `sqlx`). As camadas subsequentes (`repository`, `services`, `api`, `main`) progridem linearmente, demonstrando uma arquitetura bem definida e de baixo acoplamento. Esta visualização permite a um desenvolvedor entender rapidamente o fluxo de compilação e a arquitetura geral.
+
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=1\textwidth]{examples/example.com.png}
-\caption{Visualização do grafo de dependências gerado para o exemplo simples. Os nós em vermelho representam pacotes externos/padrão.}
+\caption{Visualização do grafo de um projeto simples, com dependências lineares.}
 \label{fig:grafoExemplo}
 \end{figure}
 
-\begin{figure}[ht]
+\subsubsection{Caso 2: Biblioteca de CLI (Cobra)}
+A Figura \ref{fig:exemplo-2} exibe o grafo de dependências da popular biblioteca `Cobra`, usada para criar aplicações de linha de comando (CLI). A estrutura aqui é mais complexa. Observamos um nó central (`github.com/spf13/cobra`) do qual muitos outros pacotes dependem. Também vemos dependências de pacotes externos como `github.com/spf13/pflag`, que gerencia flags de comando. Este tipo de grafo, com um "hub" central, é típico de bibliotecas de framework, onde um pacote principal oferece a funcionalidade central que é estendida por outros.
+
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=1\textwidth]{examples/github.com_spf13_cobra.png}
-\caption{Exemplo 2}
+\caption{Grafo de dependências da biblioteca `Cobra`, mostrando uma estrutura de hub central.}
 \label{fig:exemplo-2}
 \end{figure}
 
-\begin{figure}[ht]
+\subsubsection{Caso 3: Biblioteca de Utilitários (Posener/CMD)}
+A Figura \ref{fig:exemplo-3} mostra o grafo da biblioteca `github.com/posener/cmd`. Este grafo exibe uma estrutura diferente, mais "larga" e menos profunda que as anteriores. Isso sugere que a biblioteca é uma coleção de utilitários mais ou menos independentes, que compartilham algumas dependências comuns (como o pacote `context`), mas não formam uma hierarquia rígida. A ferramenta revela que a arquitetura é altamente modular e de baixo acoplamento entre seus diferentes componentes.
+
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=1\textwidth]{examples/github.com_posener_cmd.png}
-\caption{Exemplo 3}
+\caption{Grafo de dependências da biblioteca `posener/cmd`, exibindo uma arquitetura modular e de baixo acoplamento.}
 \label{fig:exemplo-3}
 \end{figure}
 
-A clareza da visualização (Figura \ref{fig:grafoExemplo}) e a ordem explícita dos pacotes fornecem ao desenvolvedor uma visão imediata da arquitetura do projeto, facilitando a depuração de problemas de inicialização e a compreensão do fluxo de compilação.
+\subsection{Discussão dos Resultados}
+A análise dos três casos demonstra a utilidade da ferramenta para diferentes tipos de projeto. Para aplicações simples, ela valida a arquitetura. Para bibliotecas complexas, ela revela padrões de design, como hubs centrais ou arquiteturas modulares. A capacidade de diferenciar visualmente pacotes internos e externos (coloridos de forma distinta) e de alinhar os pacotes por camada de dependência oferece uma visão imediata sobre a estrutura e a ordem de compilação, facilitando a depuração e o onboarding de novos desenvolvedores.
 
 \section{Conclusão}
-
-Este trabalho apresentou uma solução computacional para o problema de gestão de dependências em projetos Go, alinhado aos objetivos da disciplina de Ferramenta de Processamento de Dados com Grafos. A modelagem do sistema de pacotes como um grafo direcionado provou-se eficaz, e a aplicação da ordenação topológica através do algoritmo de Kahn \cite{kahn1962} permitiu não apenas determinar a sequência de compilação segura, mas também estruturar a visualização dos resultados de forma intuitiva.
-
-A ferramenta desenvolvida cumpre com sucesso os requisitos propostos: ela analisa o código-fonte, constrói um modelo em grafo, processa-o com algoritmos relevantes e apresenta os resultados de forma clara. A capacidade de detectar ciclos de dependência antes da compilação é um recurso valioso para evitar erros comuns em projetos de grande porte.
+Este trabalho apresentou uma solução computacional para o problema de gestão de dependências em projetos Go. A modelagem do sistema de pacotes como um grafo direcionado provou-se eficaz, e a aplicação da ordenação topológica através do algoritmo de Kahn \cite{kahn1962} permitiu determinar a sequência de compilação segura e estruturar a visualização dos resultados de forma intuitiva. A ferramenta cumpre com sucesso os requisitos propostos, analisando o código-fonte, construindo um modelo em grafo e apresentando os resultados de forma clara. A capacidade de detectar ciclos de dependência é um recurso valioso para evitar erros comuns em projetos de grande porte.
 
 \subsection{Trabalhos Futuros}
-Apesar de funcional, a ferramenta atual pode ser estendida de várias maneiras. Como trabalhos futuros, sugere-se:
+Apesar de funcional, a ferramenta pode ser estendida. Como trabalhos futuros, sugere-se:
 \begin{itemize}
-    \item \textbf{Análise de Desempenho:} Testar a ferramenta em repositórios de código aberto extremamente grandes (e.g., Kubernetes, Docker) para avaliar sua performance e escalabilidade.
-    \item \textbf{Parser Avançado:} Substituir as expressões regulares por um parser de Abstract Syntax Tree (AST) da linguagem Go, o que tornaria a extração de importações mais robusta e precisa.
-    \item \textbf{Integração com IDEs:} Desenvolver um plugin para editores de código populares, como o Visual Studio Code, que exiba o grafo de dependências e alerte sobre ciclos em tempo real.
-    \item \textbf{Análise de "Peso" das Arestas:} Estender o modelo para incluir métricas nas arestas, como o número de funções ou tipos utilizados de um pacote dependente, para identificar acoplamentos fortes.
+    \item \textbf{Análise de Desempenho:} Testar a ferramenta em repositórios extremamente grandes (e.g., Kubernetes).
+    \item \textbf{Parser Avançado:} Substituir as expressões regulares por um parser de AST, tornando a extração de importações mais robusta.
+    \item \textbf{Integração com IDEs:} Desenvolver um plugin para editores como o VS Code para exibir o grafo em tempo real.
+    \item \textbf{Análise de "Peso" das Arestas:} Estender o modelo para incluir métricas de acoplamento.
 \end{itemize}
 
 \bibliographystyle{sbc}
