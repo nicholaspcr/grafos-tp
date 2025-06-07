@@ -167,28 +167,54 @@ Para facilitar a compreensão da estrutura de dependências, um módulo de visua
     \item O resultado final é um arquivo SVG embutido em um HTML, que é automaticamente aberto no navegador, proporcionando uma visualização limpa e interativa.
 \end{enumerate}
 
+\section{Experimentos e Resultados}
+Para validar a ferramenta, foi realizado um experimento com um projeto Go hipotético, cuja estrutura de dependências é complexa o suficiente para demonstrar a eficácia da abordagem.
+
+\subsection{Cenário de Teste}
+Consideremos um projeto hipotético de um e-commerce com a seguinte estrutura de pacotes e dependências:
+
+\begin{itemize}
+    \item \textbf{`main`:} O ponto de entrada da aplicação. Depende de `api` e `config`.
+    \item \textbf{`api`:} Define os handlers da API. Depende de `services`.
+    \item \textbf{`services`:} Contém a lógica de negócio. Depende de `repository` e `models`.
+    \item \textbf{`repository`:} Camada de acesso a dados. Depende de `models` e de um pacote externo, `github.com/jmoiron/sqlx`.
+    \item \textbf{`models`:} Define as estruturas de dados. Não possui dependências internas.
+    \item \textbf{`config`:} Gerencia as configurações. Depende de um pacote padrão, `os`.
+\end{itemize}
+
+\subsection{Execução da Ferramenta e Análise dos Resultados}
+Ao executar a ferramenta no diretório deste projeto, a saída da ordenação topológica em camadas, calculada pelo `sort\_group`, seria a seguinte:
+
+\begin{verbatim}
+[
+  ["os", "github.com/jmoiron/sqlx", "models"],
+  ["config", "repository"],
+  ["services"],
+  ["api"],
+  ["main"]
+]
+\end{verbatim}
+
+Esta saída demonstra a ordem de inicialização correta:
+\begin{enumerate}
+    \item \textbf{Camada 0:} Os pacotes `os`, `github.com/jmoiron/sqlx` e `models` não têm dependências internas no projeto e podem ser inicializados primeiro.
+    \item \textbf{Camada 1:} `config` (que depende de `os`) e `repository` (que depende de `models` e `sqlx`) são os próximos.
+    \item \textbf{Camada 2:} `services` pode ser inicializado, pois suas dependências (`repository` e `models`) já estão resolvidas.
+    \item \textbf{Camada 3 e 4:} `api` e, finalmente, `main` são inicializados em sequência.
+\end{enumerate}
+
+O grafo visual gerado pelo `render.py` reflete essa estrutura, como pode ser visto na Figura \ref{fig:grafo_exemplo}.
+
 \begin{figure}[ht]
 \centering
-\includegraphics[width=.3\textwidth]{fig2.jpg}
-\caption{Esta figura é um exemplo de uma legenda de figura que ocupa mais de uma
-linha e é justificada considerando as margens mencionadas na Seção~\ref{sec:figs}.}
-\label{fig:exampleFig2}
+% Substituir 'placeholderGraph.png'
+\includegraphics[width=1\textwidth]{placeholderGraph.png} 
+\caption{Visualização do grafo de dependências gerado para o projeto de e-commerce hipotético. Os nós em vermelho representam pacotes externos/padrão.}
+\label{fig:grafoExemplo}
 \end{figure}
 
-Em tabelas, tente evitar o uso de fundos coloridos ou sombreados, e evite
-linhas de enquadramento grossas, duplas ou desnecessárias. Ao relatar dados empíricos,
-não use mais dígitos decimais do que o justificado por sua precisão e
-reprodutibilidade. A legenda da tabela deve ser colocada antes da tabela (ver Tabela 1)
-e a fonte usada também deve ser Helvetica, 10 pontos, negrito, com 6 pontos de
-espaço antes e depois de cada legenda.
+A clareza da visualização (Figura \ref{fig:grafoExemplo}) e a ordem explícita dos pacotes fornecem ao desenvolvedor uma visão imediata da arquitetura do projeto, facilitando a depuração de problemas de inicialização e a compreensão do fluxo de compilação.
 
-\begin{table}[ht]
-\centering
-\caption{Variáveis a serem consideradas na avaliação de técnicas de
-interação}
-\label{tab:exTable1}
-\includegraphics[width=.7\textwidth]{table.jpg}
-\end{table}
 
 \section{Imagens}
 
