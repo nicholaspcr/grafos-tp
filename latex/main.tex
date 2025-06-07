@@ -7,7 +7,7 @@
 
 \usepackage{sbc-template}
 \usepackage{graphicx,url}
-\usepackage[utf8]{inputenc}  
+\usepackage[utf8]{inputenc}
 \usepackage{amsmath} % Para ambientes matemáticos
 \usepackage{listings} % Para blocos de código
 \usepackage{xcolor} % Para cores no código
@@ -19,25 +19,25 @@
 \definecolor{backcolour}{rgb}{0.95,0.95,0.92}
 
 \lstdefinestyle{customStyle}{
-    backgroundcolor=\color{backcolour},   
+    backgroundcolor=\color{backcolour},
     commentstyle=\color{codegreen},
     keywordstyle=\color{magenta},
     numberstyle=\tiny\color{codegray},
     stringstyle=\color{codepurple},
     basicstyle=\ttfamily\footnotesize,
-    breakatwhitespace=false,         
-    breaklines=true,                 
-    captionpos=b,                    
-    keepspaces=true,                 
-    numbers=left,                    
-    numbersep=5pt,                  
-    showspaces=false,                
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
     showstringspaces=false,
-    showtabs=false,                  
+    showtabs=false,
     tabsize=2
 }
 \lstset{style=customStyle}
-     
+
 \sloppy
 
 \title{Gestão de Dependências em Projetos Go com Ordenação Topológica}
@@ -50,11 +50,11 @@
   \email{nicholaspcr@gmail.com, email2@dominio.com}
 }
 
-\begin{document} 
+\begin{document}
 
 \maketitle
 
-\begin{resumo} 
+\begin{resumo}
 A gestão de dependências é um desafio em software moderno. Este artigo apresenta uma ferramenta que analisa e visualiza dependências em projetos Go, modelando-as como um grafo direcionado. Através da ordenação topológica com o algoritmo de Kahn, a ferramenta determina a sequência de compilação segura e detecta dependências cíclicas — um erro crítico em Go. A solução, implementada em Python, abrange desde a análise do código até a geração de um grafo interativo, oferecendo um suporte prático para a gestão de conflitos em sistemas de dependência.
 \end{resumo}
 
@@ -218,9 +218,23 @@ O grafo visual gerado pelo `render.py` reflete essa estrutura, como pode ser vis
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=1\textwidth]{ordemTopologica.png} 
+\includegraphics[width=1\textwidth]{examples/example.com.png}
 \caption{Visualização do grafo de dependências gerado para o exemplo simples. Os nós em vermelho representam pacotes externos/padrão.}
 \label{fig:grafoExemplo}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=1\textwidth]{examples/github.com_spf13_cobra.png}
+\caption{Exemplo 2}
+\label{fig:exemplo-2}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=1\textwidth]{examples/github.com_posener_cmd.png}
+\caption{Exemplo 3}
+\label{fig:exemplo-3}
 \end{figure}
 
 A clareza da visualização (Figura \ref{fig:grafoExemplo}) e a ordem explícita dos pacotes fornecem ao desenvolvedor uma visão imediata da arquitetura do projeto, facilitando a depuração de problemas de inicialização e a compreensão do fluxo de compilação.
