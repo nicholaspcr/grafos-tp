@@ -145,7 +145,16 @@ O problema foi modelado como um grafo direcionado $G = (V, E)$, conforme descrit
 \end{itemize}
 
 \subsection{Componentes da Ferramenta}
-A ferramenta segue um fluxo de execução claro: extração de dados, processamento (ordenação) e visualização.
+
+A arquitetura geral da ferramenta, que segue o fluxo de extração, processamento e visualização, está ilustrada no diagrama de componentes da Figura~\ref{fig:diagrama-classes}.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\textwidth]{images/diagrama_classes.png}
+    \caption{Diagrama de componentes da ferramenta, ilustrando a interação entre os módulos de extração (\texttt{BuildDependencyGraph}), processamento (\texttt{Topological}) e renderização (\texttt{render\_graph}).}
+    \label{fig:diagrama-classes}
+\end{figure}
+
 
 \subsubsection{Extração e Construção do Grafo (\texttt{dependency\_graph\_builder.py})}
 Este módulo é responsável por ler o sistema de arquivos e construir a representação do grafo. O processo é o seguinte:
