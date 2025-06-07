@@ -1,46 +1,53 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% How to use writeLaTeX: 
-%
-% You edit the source code here on the left, and the preview on the
-% right shows you the result within a few seconds.
-%
-% Bookmark this page and share the URL with your co-authors. They can
-% edit at the same time!
-%
-% You can upload figures, bibliographies, custom classes and
-% styles using the files menu.
-%
+% Template para artigos da SBC
+% Adaptado para o trabalho prático de Processamento de Dados com Grafos
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \documentclass[12pt]{article}
 
 \usepackage{sbc-template}
-
 \usepackage{graphicx,url}
-
-% \usepackage[brazil]{babel}   
 \usepackage[utf8]{inputenc}  
+\usepackage{amsmath} % Para ambientes matemáticos
+\usepackage{listings} % Para blocos de código
+\usepackage{xcolor} % Para cores no código
 
+% Configuração para blocos de código
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{customStyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=customStyle}
      
 \sloppy
 
-\title{Instruções para Autores de Artigos e Resumos\\ de Conferências da SBC}
+\title{Gestão de Dependências em Projetos Go com Ordenação Topológica}
 
-\author{Luciana P. Nedel\inst{1}, Rafael H. Bordini\inst{2}, Flávio Rech
-  Wagner\inst{1}, Jomi F. Hübner\inst{3} }
+% FAVOR PREENCHER OS DADOS DOS AUTORES E INSTITUIÇÕES
+\author{Nicholas Pereira Cristófaro\inst{1}, Nome Sobrenome do Aluno 2\inst{1}}
 
-
-\address{Instituto de Informática -- Universidade Federal do Rio Grande do Sul
-  (UFRGS)\\
-  Caixa Postal 15.064 -- 91.501-970 -- Porto Alegre -- RS -- Brazil
-\nextinstitute
-  Departamento de Ciência da Computação -- Universidade de Durham\\
-  Durham, Reino Unido
-\nextinstitute
-  Departamento de Sistemas e Computação\\
-  Universidade Regional de Blumenal (FURB) -- Blumenau, SC -- Brazil
-  \email{\{nedel,flavio\}@inf.ufrgs.br, R.Bordini@durham.ac.uk,
-  jomi@inf.furb.br}
+\address{Pontifícia Universidade Católica de Minas Gerais\\
+  Belo Horizonte -- Minas Gerais -- Brasil
+  \email{nicholaspcr@gmail.com, email2@dominio.com}
 }
 
 \begin{document} 
@@ -48,23 +55,11 @@
 \maketitle
 
 \begin{resumo} 
-  Este meta-artigo descreve o estilo a ser usado na confecção de artigos e
-  resumos de artigos para publicação nos anais das conferências organizadas
-  pela SBC. É solicitada a escrita de resumo e abstract apenas para os artigos
-  escritos em português. Artigos em inglês deverão apresentar apenas abstract.
-  Nos dois casos, o autor deve tomar cuidado para que o resumo (e o abstract)
-  não ultrapassem 10 linhas cada, sendo que ambos devem estar na primeira
-  página do artigo.
+  A complexidade crescente dos sistemas de software modernos exige mecanismos robustos para a gestão de dependências. Este artigo apresenta o desenvolvimento de uma ferramenta para análise e visualização de dependências em projetos na linguagem Go. O problema da ordem de inicialização de pacotes é modelado como um grafo direcionado, onde os pacotes são os vértices e as importações representam as arestas. Utilizando o algoritmo de Kahn para ordenação topológica, a ferramenta determina a sequência de compilação segura e identifica a existência de dependências cíclicas, um erro crítico em Go. O trabalho detalha a implementação em Python, desde a análise do código-fonte até a geração de uma visualização gráfica interativa do grafo, alinhando-se ao tema de gestão de conflitos em sistemas de dependência.
 \end{resumo}
 
-     
-
 \begin{abstract}
-  Este meta-artigo descreve o estilo a ser usado em artigos e artigos curtos
-  para as conferências da SBC. Para artigos em inglês, você deve adicionar apenas um
-  abstract, enquanto para os artigos em português, também pedimos um resumo em
-  português (``resumo''). Em ambos os casos, os resumos não devem ter mais de
-  10 linhas e devem estar na primeira página do artigo.
+  The growing complexity of modern software systems demands robust mechanisms for dependency management. This paper presents the development of a tool for analyzing and visualizing dependencies in projects written in the Go language. The package initialization order problem is modeled as a directed graph, where packages are vertices and imports represent edges. Using Kahn's algorithm for topological sorting, the tool determines the safe compilation sequence and identifies the existence of cyclic dependencies, a critical error in Go. The work details the Python implementation, from source code parsing to the generation of an interactive graphical visualization of the graph, aligning with the theme of conflict management in dependency systems.
 \end{abstract}
 
 \section{Informações Gerais}
