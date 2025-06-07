@@ -145,10 +145,26 @@ Este módulo é responsável por ler o sistema de arquivos e construir a represe
     \item \textbf{Busca por Arquivos Go:} O método `find\_go\_files` percorre recursivamente o diretório do projeto em
         busca de arquivos com a extensão `.go`, ignorando arquivos de teste (`\_test.go`).
     \item \textbf{Extração de Importações:} O método estático `extract\_imports` utiliza expressões regulares (regex) para analisar o conteúdo de cada arquivo Go e extrair todos os pacotes importados. Ele é projetado para lidar tanto com importações de linha única (`import "fmt"`) quanto com blocos de importação (`import (...)`).
+        % TODO: Adicionar referência a exemplos de código adicionado.
     \item \textbf{Construção do Grafo:} O método `build\_dependency\_graph` orquestra o processo. Ele primeiro
         identifica todos os pacotes definidos localmente e depois itera sobre cada arquivo, usando as importações
         extraídas para construir o `graph` e popular o mapa `in\_degree`.
 \end{enumerate}
+
+\begin{lstlisting}[language=Go, caption={Exemplo de um bloco de importações em Go.}, label={lst:go-imports}]
+import (
+    "fmt"
+    "log"
+    "net/http"
+
+    "github.com/gorilla/mux"
+    "meuprojeto/internal/database"
+)
+\end{lstlisting}
+
+\begin{lstlisting}[language=Go, caption={Exemplo de importação inline em Go.}, label={lst:go-imports}]
+import "fmt"
+\end{lstlisting}
 
 \subsubsection{Ordenação Topológica e Detecção de Ciclos (\texttt{topological\_sorting.py})}
 Este módulo implementa a lógica central do processamento.
