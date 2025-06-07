@@ -42,7 +42,7 @@
 
 \title{Gestão de Dependências em Projetos Go com Ordenação Topológica}
 
-% FAVOR PREENCHER OS DADOS DOS AUTORES E INSTITUIÇÕES
+% TODO: PREENCHER OS DADOS DOS AUTORES E INSTITUIÇÕES
 \author{Nicholas Pereira Cristófaro\inst{1}, Nome Sobrenome do Aluno 2\inst{1}}
 
 \address{Pontifícia Universidade Católica de Minas Gerais\\
@@ -62,64 +62,24 @@
   The growing complexity of modern software systems demands robust mechanisms for dependency management. This paper presents the development of a tool for analyzing and visualizing dependencies in projects written in the Go language. The package initialization order problem is modeled as a directed graph, where packages are vertices and imports represent edges. Using Kahn's algorithm for topological sorting, the tool determines the safe compilation sequence and identifies the existence of cyclic dependencies, a critical error in Go. The work details the Python implementation, from source code parsing to the generation of an interactive graphical visualization of the graph, aligning with the theme of conflict management in dependency systems.
 \end{abstract}
 
-\section{Informações Gerais}
 
-O presente trabalho se insere no contexto do desenvolvimento de ferramentas computacionais para processamento de dados estruturados como grafos, com foco na aplicação de conceitos da teoria dos grafos e na adesão a boas práticas de engenharia de software. O objetivo central é apresentar uma solução para um problema prático na análise de projetos de software desenvolvidos na linguagem Go (Golang): a determinação da ordem de inicialização de seus pacotes. A linguagem Go, reconhecida por sua eficiência e robusto sistema de gerenciamento de pacotes, impõe uma ordem de inicialização determinística onde as dependências de um pacote são inicializadas antes do próprio pacote. Essa característica é crucial para a correta execução das funções `init()`, responsáveis pela configuração inicial de cada pacote.
+\section{Introdução}
 
-A ordem de inicialização de pacotes em Go pode ser naturalmente modelada como um grafo de dependências direcionado acíclico (DAG). A obtenção de uma ordenação topológica deste grafo revela a sequência exata em que os pacotes são carregados e suas funções `init()` são executadas. Tal visualização não apenas auxilia na compreensão da arquitetura de um projeto, mas também é fundamental para ferramentas de análise estática e otimização de compilação. Para alcançar este objetivo, optou-se pela implementação do algoritmo de Kahn, uma abordagem clássica para a ordenação topológica. Este trabalho detalha o desenvolvimento de um script em Python que utiliza o algoritmo de Kahn para processar as dependências de um projeto Golang, gerando como saída a sua ordenação topológica. A ferramenta desenvolvida visa oferecer um mecanismo eficaz para que desenvolvedores e analistas possam visualizar e gerenciar a complexa rede de interdependências em seus projetos Go, contribuindo para uma melhor compreensão da sequência de inicialização e, consequentemente, do comportamento do software.
+O desenvolvimento de software contemporâneo é caracterizado pela modularidade e reutilização de código, resultando em sistemas compostos por um grande número de componentes interdependentes. A gestão dessa rede de dependências é um desafio central na engenharia de software. Falhas nesse gerenciamento podem levar a erros de compilação, comportamento inesperado em tempo de execução e dificuldades na manutenção e evolução dos projetos.
 
-Os artigos completos devem respeitar os limites de página definidos pela conferência.
-Conferências que publicam apenas resumos pedem por textos de \textbf{uma} página.
+A linguagem de programação Go (Golang), desenvolvida pelo Google, possui um sistema de pacotes estático e um compilador que impõem regras estritas sobre as dependências. Uma dessas regras é que as dependências de um pacote devem ser inicializadas antes do próprio pacote. Isso garante a execução correta das funções `init()`, que são utilizadas para configurar o estado inicial de cada pacote. Quando um projeto contém uma dependência cíclica (por exemplo, pacote A importa B e pacote B importa A), o compilador Go gera um erro, pois não é possível determinar uma ordem de inicialização válida.
 
-\section{Primeira Página} \label{sec:firstpage}
+A ordem de inicialização de pacotes em Go pode ser modelada de forma natural como um grafo de dependências direcionado acíclico (DAG). Neste modelo, cada pacote é um vértice e uma diretiva `import` de um pacote A para um pacote B cria uma aresta direcionada de B para A, significando que A depende de B. A solução para determinar a sequência correta de inicialização é, portanto, encontrar uma ordenação topológica desse grafo.
 
-A primeira página deve exibir o título do artigo, o nome e o endereço dos
-autores, o abstract em inglês e o resumo em português (resumos são
-necessários apenas para artigos escritos em português). O título deve ser centralizado
-em toda a página, em fonte negrito de 16 pontos e com 12 pontos de espaço
-antes de si. Os nomes dos autores devem ser centralizados em fonte de 12 pontos, negrito, todos
-dispostos na mesma linha, separados por vírgulas e com 12 pontos de
-espaço após o título. Os endereços devem ser centralizados em fonte de 12 pontos, também com
-12 pontos de espaço após os nomes dos autores. Os endereços de e-mail devem ser
-escritos usando a fonte Courier New, tamanho nominal de 10 pontos, com 6 pontos de espaço
-antes e 6 pontos de espaço depois. O abstract e o resumo (se for o caso) devem estar em fonte Times de 12 pontos,
-com recuo de 0,8 cm em ambos os lados. A palavra \textbf{Abstract} e \textbf{Resumo},
-deve ser escrita em negrito e preceder o texto.
+Este trabalho se enquadra na proposta de "Gestão de Conflitos em Sistemas de Dependência", focando na modelagem, detecção de ciclos e execução segura baseada em ordenação topológica. Para isso, foi desenvolvida uma ferramenta em Python que:
+\begin{itemize}
+    \item Analisa recursivamente os arquivos de um projeto Go para extrair as relações de importação.
+    \item Constrói um grafo de dependências direcionado a partir dessas relações.
+    \item Aplica o algoritmo de Kahn para realizar a ordenação topológica dos pacotes.
+    \item Gera uma visualização gráfica do grafo de dependências, destacando a ordem de inicialização em camadas.
+\end{itemize}
 
-\section{CD-ROMs e Anais Impressos}
-
-Em algumas conferências, os artigos são publicados em CD-ROM enquanto apenas o
-resumo é publicado nos Anais impressos. Neste caso, os autores são
-convidados a preparar duas versões finais do artigo. Uma, completa, para ser
-publicada no CD e a outra, contendo apenas a primeira página, com
-abstract e resumo (para artigos em português).
-
-\section{Seções e Parágrafos}
-
-Os títulos das seções devem estar em negrito, 13pt, alinhados à esquerda. Deve haver um espaço extra
-de 12 pt antes de cada título. A numeração das seções é opcional. O primeiro
-parágrafo de cada seção não deve ser recuado, enquanto as primeiras linhas dos
-parágrafos subsequentes devem ser recuadas em 1,27 cm.
-
-\subsection{Subseções}
-
-Os títulos das subseções devem estar em negrito, 12pt, alinhados à esquerda.
-
-\section{Figuras e Legendas}\label{sec:figs}
-
-
-As legendas de figuras e tabelas devem ser centralizadas se tiverem menos de uma linha
-(Figura~\ref{fig:exampleFig1}), caso contrário, justificadas e recuadas em 0,8 cm em
-ambas as margens, como mostrado na Figura~\ref{fig:exampleFig2}. A fonte da legenda deve
-ser Helvetica, 10 pontos, negrito, com 6 pontos de espaço antes e depois de cada
-legenda.
-
-\begin{figure}[ht]
-\centering
-\includegraphics[width=.5\textwidth]{fig1.jpg}
-\caption{Uma figura típica}
-\label{fig:exampleFig1}
-\end{figure}
+O restante deste artigo está organizado da seguinte forma: a Seção 2 apresenta a fundamentação teórica sobre grafos, ordenação topológica e o sistema de pacotes do Go. A Seção 3 detalha a modelagem do problema e a arquitetura da ferramenta desenvolvida. A Seção 4 apresenta os experimentos realizados e discute os resultados obtidos. Finalmente, a Seção 5 conclui o trabalho e aponta direções para desenvolvimentos futuros.
 
 \begin{figure}[ht]
 \centering
