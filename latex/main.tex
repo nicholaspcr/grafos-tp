@@ -241,7 +241,9 @@ Para validar a ferramenta e demonstrar sua utilidade, ela foi aplicada a quatro 
 \subsection{Estudo de Caso com Projetos Reais}
 
 \subsubsection{Caso 1: Aplicação Simples}
-O primeiro cenário, ilustrado na Figura \ref{fig:grafoExemplo}, representa uma aplicação web hipotética. O grafo gerado mostra uma estrutura clara e linear. Na camada mais à esquerda (Camada 0), temos os nós sem dependências internas. As camadas subsequentes progridem linearmente, demonstrando uma arquitetura bem definida e de baixo acoplamento.
+O primeiro cenário, ilustrado na Figura \ref{fig:grafoExemplo}, representa uma aplicação simples com poucas
+dependências. O grafo gerado mostra uma estrutura clara e linear. Na camada mais à esquerda (Camada 0), temos os nós que
+representam dependências externas. As camadas subsequentes progridem linearmente, demonstrando uma arquitetura bem definida e de baixo acoplamento.
 
 \begin{figure}[htbp] 
 \centering
@@ -260,17 +262,7 @@ A Figura \ref{fig:exemplo-2} exibe o grafo de dependências da popular bibliotec
 \label{fig:exemplo-2}
 \end{figure}
 
-\subsubsection{Caso 3: Biblioteca de Utilitários (Posener/CMD)}
-A Figura \ref{fig:exemplo-3} mostra o grafo da biblioteca `github.com/posener/cmd`. Este grafo exibe uma estrutura diferente, mais "larga" e menos profunda, sugerindo uma coleção de utilitários mais ou menos independentes que compartilham algumas dependências comuns mas não formam uma hierarquia rígida.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=1\textwidth]{examples/github.com_posener_cmd.png}
-\caption{Grafo de dependências da biblioteca `posener/cmd`, exibindo uma arquitetura modular.}
-\label{fig:exemplo-3}
-\end{figure}
-
-\subsubsection{Caso 4: Aplicação Web Simples}
+\subsubsection{Caso 3: Aplicação Web Simples}
 O quarto e último caso, apresentado na Figura~\ref{fig:exemplo-4}, demonstra o grafo de um servidor web simples construído com o framework `Echo`. Este grafo exibe um padrão de "consumidor". O nó central (`webserver.com`) representa a aplicação principal, e as setas de dependência convergem para ele a partir de múltiplas bibliotecas, como o próprio `Echo` (`github.com/labstack/echo/v4`), pacotes de middleware e pacotes da biblioteca padrão (`net/http`, `log/slog`).
 
 \begin{figure}[htbp]
@@ -280,10 +272,20 @@ O quarto e último caso, apresentado na Figura~\ref{fig:exemplo-4}, demonstra o 
 \label{fig:exemplo-4}
 \end{figure}
 
+\subsubsection{Caso 4: Aplicação Híbrida (HTTP e gRPC)}
+A Figura \ref{fig:exemplo-3} apresenta um grafo mais complexo, de uma aplicação web híbrida que suporta tanto requisições HTTP, através do framework Echo, quanto RPC, utilizando gRPC. É notável a presença de pacotes para gerenciamento de sessões de usuário (`github.com/gorilla/sessions`) e para logging estruturado (`log/slog`). Diferente dos casos anteriores, este grafo exibe uma arquitetura mais interconectada. Vemos múltiplos componentes internos (`handlers`, `middleware`, `session`) que convergem para um pacote de servidor central. Essa estrutura é típica de aplicações de microserviços ou de backends mais robustos, onde diferentes protocolos e funcionalidades de suporte precisam coexistir e interagir.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=1\textwidth]{examples/gode.png}
+\caption{Grafo de dependências de uma aplicação web híbrida (HTTP/gRPC), destacando a interconexão entre diferentes funcionalidades.}
+\label{fig:exemplo-3}
+\end{figure}
+
 \FloatBarrier 
 
 \subsection{Discussão dos Resultados}
-A análise comparativa dos quatro casos revela a capacidade da ferramenta de extrair e visualizar diferentes padrões de arquitetura de software. Enquanto o Caso 1 (Aplicação Simples) e o Caso 4 (Servidor Web) representam arquiteturas de *aplicação*, onde um ou mais pacotes centrais consomem funcionalidades de bibliotecas, os Casos 2 (Cobra) e 3 (Posener/CMD) ilustram arquiteturas de *bibliotecas*, projetadas para serem consumidas por outros.
+A análise comparativa dos quatro casos revela a capacidade da ferramenta de extrair e visualizar diferentes padrões de arquitetura de software. Enquanto o Caso 1 (Aplicação Simples) e o Caso 3 (Servidor Web) representam arquiteturas de *aplicação*, onde um ou mais pacotes centrais consomem funcionalidades de bibliotecas, os Casos 2 (Cobra) e 3 (Posener/CMD) ilustram arquiteturas de *bibliotecas*, projetadas para serem consumidas por outros.
 
 O grafo do framework Cobra (Figura \ref{fig:exemplo-2}) evidencia um padrão de "hub-e-spoke", com alto acoplamento aferente no pacote principal, indicando sua centralidade. Uma alteração neste pacote tem um alto potencial de impacto em todo o ecossistema da biblioteca. Em contraste, a biblioteca Posener/CMD (Figura \ref{fig:exemplo-3}) demonstra alta coesão e baixo acoplamento entre seus diferentes módulos, sugerindo que a manutenção de um utilitário tem baixo risco de afetar os demais.
 
