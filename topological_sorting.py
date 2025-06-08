@@ -59,27 +59,25 @@ class Topological:
         Performs a topological sort on a directed acyclic graph (DAG).
         Uses Kahn's algorithm.
         """
-        queue = deque()
-        leaves_matrix: list[str] = []
 
-        leaves_nodes = []
+        queue = deque()
         for v in graph:
             if in_degree[v] == 0:
-                leaves_nodes.append(v)
-        queue.append(leaves_nodes)
+                queue.append(v)
 
+        sorted_layers = []
         while queue:
-            leaves_list = queue.popleft()
-            leaves_matrix.append(leaves_list)
-            new_leaves = []
+            layer_size = len(queue)
+            current_layer = []
+            for _ in range(layer_size):
+                node = queue.popleft()
+                current_layer.append(node)
 
-            for node in leaves_list:
-                for v in graph[node]:
-                    in_degree[v] -= 1
-                    if in_degree[v] == 0:
-                        new_leaves.append(v)
+                for neighbor in graph[node]:
+                    in_degree[neighbor] -= 1
+                    if in_degree[neighbor] == 0:
+                        queue.append(neighbor)
 
-            if new_leaves:
-                queue.append(new_leaves)
+            sorted_layers.append(current_layer)
 
-        return leaves_matrix
+        return sorted_layers
