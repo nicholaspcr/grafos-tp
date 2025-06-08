@@ -235,7 +235,7 @@ A diretiva `rank='same'` é o que garante que todos os pacotes em uma mesma cama
 \FloatBarrier
 
 \section{Aplicação e Resultados}
-Para validar a ferramenta e demonstrar sua utilidade, ela foi aplicada a quatro projetos com diferentes níveis de complexidade. Esta seção apresenta uma análise dos grafos gerados.
+Para validar a ferramenta e demonstrar sua utilidade, ela foi aplicada a cinco projetos com diferentes níveis de complexidade. Esta seção apresenta uma análise dos grafos gerados.
 
 \subsection{Estudo de Caso com Projetos Reais}
 
@@ -281,12 +281,20 @@ A Figura \ref{fig:exemplo-3} apresenta um grafo mais complexo, de uma aplicaçã
 \label{fig:exemplo-3}
 \end{figure}
 
+\subsubsection{Caso 5: Bindings para GUI (gotk3)}
+O último caso de estudo analisa o projeto `gotk3`, um conjunto de bindings que permite a criação de aplicações de interface gráfica (GUI) em Go utilizando a biblioteca GTK3. O grafo resultante, ilustrado na Figura \ref{fig:exemplo-5}, é notavelmente denso e expansivo. Ele revela uma arquitetura de "wrappers", onde um grande número de pequenos pacotes Go (`gtk`, `gdk`, `glib`) espelham a estrutura da biblioteca C subjacente. As dependências demonstram uma hierarquia clara: pacotes de alto nível, como `gtk` (que define widgets), dependem de pacotes de nível mais baixo, como `gdk` (desenho) e `glib` (estruturas de dados). A complexidade deste grafo destaca a utilidade da ferramenta para navegar e entender a arquitetura de projetos que se integram com grandes ecossistemas de C.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=1\textwidth]{examples/gotk3.png}
+\caption{Grafo de dependências do projeto gotk3, ilustrando a arquitetura complexa de bindings para uma biblioteca de GUI.}
+\label{fig:exemplo-5}
+\end{figure}
+
 \FloatBarrier 
 
 \subsection{Discussão dos Resultados}
-A análise comparativa dos quatro casos revela a capacidade da ferramenta de extrair e visualizar diferentes padrões de arquitetura de software. Enquanto o Caso 1 (Aplicação Simples) e o Caso 3 (Servidor Web) representam arquiteturas de *aplicação*, onde um ou mais pacotes centrais consomem funcionalidades de bibliotecas, os Casos 2 (Cobra) e 3 (Posener/CMD) ilustram arquiteturas de *bibliotecas*, projetadas para serem consumidas por outros.
-
-O grafo do framework Cobra (Figura \ref{fig:exemplo-2}) evidencia um padrão de "hub-e-spoke", com alto acoplamento aferente no pacote principal, indicando sua centralidade. Uma alteração neste pacote tem um alto potencial de impacto em todo o ecossistema da biblioteca. Em contraste, a biblioteca Posener/CMD (Figura \ref{fig:exemplo-3}) demonstra alta coesão e baixo acoplamento entre seus diferentes módulos, sugerindo que a manutenção de um utilitário tem baixo risco de afetar os demais.
+A análise comparativa dos cinco casos revela a capacidade da ferramenta de extrair e visualizar diferentes padrões de arquitetura de software. Os casos demonstram arquiteturas de *aplicação* (Casos 1, 3 e 4), que consomem bibliotecas, e de *bibliotecas* (Caso 2), projetadas para serem consumidas. Finalmente, o Caso 5 introduz um padrão distinto, o de *bindings* para bibliotecas C, caracterizado por um grafo denso que mapeia a arquitetura de um sistema externo.
 
 A ferramenta, portanto, não serve apenas para validar a ordem de compilação, mas também como um mecanismo para avaliação qualitativa da arquitetura. A visualização em camadas permite que um desenvolvedor identifique rapidamente os pacotes mais fundamentais (camadas à esquerda) e os pontos de entrada da aplicação (camadas à direita), facilitando a depuração e o onboarding em projetos desconhecidos.
 
