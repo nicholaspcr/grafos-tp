@@ -1,74 +1,62 @@
-# TP
+# Ferramenta de Análise de Dependências para Projetos Go
 
-Reference links
-- https://networkx.org/
-    - To check if the implementation is valid.
+Este repositório contém o código-fonte de uma ferramenta desenvolvida para analisar, visualizar e determinar a ordem de compilação de pacotes em projetos na linguagem Go, utilizando ordenação topológica.
 
-## Requirements
+## Requisitos
 
-To run the code in this repository you need to have installed in your machine the following:
+Para executar o código deste repositório, você precisa ter instalado em sua máquina:
 
-1. Python3
-2. pip
+1.  **Python 3** (versão 3.8 ou superior é recomendada).
+2.  **pip** (geralmente já vem instalado com o Python).
+3.  **Graphviz**: Esta é uma dependência do sistema e deve ser instalada antes dos pacotes Python. Você pode baixá-la no site oficial:
+    * [https://graphviz.org/download/](https://graphviz.org/download/)
 
-## Install
+## Instalação
 
-You should have [graphviz](https://graphviz.org/download/) installed in your system.
+Para configurar o ambiente e instalar as dependências do projeto, siga os passos abaixo:
 
-Additionally you should do the following:
+1.  **Clone o repositório** (caso ainda não tenha feito):
+    ```bash
+    git clone <URL_DO_SEU_REPOSITORIO>
+    cd <NOME_DA_PASTA_DO_PROJETO>
+    ```
 
-1. `python3 -m venv venv`
-2. `source venv/bin/activate`
-    - Ensure that the python version of pip is the same as the python being used.
-3. `pip install -r requirements.txt`
+2.  **Crie um ambiente virtual (virtual environment):**
+    Isso isola as dependências do seu projeto do restante do sistema.
+    ```bash
+    python3 -m venv venv
+    ```
 
+3.  **Ative o ambiente virtual:**
+    * **No Linux ou macOS:**
+        ```bash
+        source venv/bin/activate
+        ```
+    * **No Windows (PowerShell ou CMD):**
+        ```bash
+        .\venv\Scripts\activate
+        ```
+    O nome do ambiente virtual `(venv)` deverá aparecer no início do seu terminal.
 
-# Remove later
-## TODO
+4.  **Instale os pacotes Python:**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-Até dia 30 fazer:
-- [ ] Implementar Kahn algorithm
-- [ ] Implementar visualização com graphiz
-- [ ] Template de relatório Latex no repositório
+## Execução
 
-## Etapa 1
+Com o ambiente virtual ativado, você pode executar a ferramenta da seguinte forma:
 
-- [x] Escolha do tema
-- [x] definição do problema
-- [x] levantamento de dados 
-- [ ] modelagem do grafo.
-    - A utiização de diagramas UML será avaliado na modelagem!
-    - Professor é de Engenharia de Software, foco nos diagramas
+1.  **Execute o script principal:**
+    ```bash
+    python main.py
+    ```
 
-## Etapa 2
+2.  **Informe o caminho do projeto Go:**
+    O script solicitará que você insira o caminho para o diretório raiz de um projeto Go que você deseja analisar.
+    ```
+    Enter the root directory of the Go project: /caminho/para/seu/projeto-go
+    ```
 
-- [ ] Implementação da estrutura de grafos
-- [ ] Aplicação dos algoritmos e construção de uma interface mínima de uso. 
-- [ ] Apresente uma interface gráfica com os resultados.
-    - Visualização das dependências.
-    - Talvez colorir dependências externas em uma cor distinta das dependências dentro do repositório.
-
-## Etapa 3
-
-- [ ] Contextualização, modelagem, análise dos resultados obtidos 
-- [ ] avaliação do desempenho,
-- [ ] conclusões e apresentação da solução.
-
-Entregáveis: Relatório técnico em LATEX usando o template oficial da SBC (obrigatório);
-apresentação oral com demonstração da ferramenta; repositório Git contendo o histórico
-de desenvolvimento (commits individuais serão avaliados)
-
-
-## Ideia
-
-A ideia é utilizar do tema 9:
-
-> Gestão de Conflitos em Sistemas de Dependência: modelagem de dependências entre tarefas ou pacotes com detecção de
-> ciclos, visualização de dependências e execução segura baseada em ordenação topológica.
-
-Onde o objetivo é analisar as dependências internas e externas de repositórios escritos em golang, tais como:
-- https://github.com/nicholaspcr/gode
-- https://github.com/cli/cli
-- https://github.com/TheThingsNetwork/lorawan-stack
-
-Deve-se conferir se existe ciclo e caso não exista, precisamos gerar a ordem topológica das dependências.
+3.  **Visualize o resultado:**
+    Após a análise, a ferramenta gerará um arquivo com o grafo de dependências (por exemplo, `dependency_graph.svg` ou `static_graph.html`) e, dependendo da implementação, poderá abri-lo automaticamente no seu navegador.
