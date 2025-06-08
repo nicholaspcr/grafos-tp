@@ -11,7 +11,7 @@
 \usepackage{amsmath} % Para ambientes matemáticos
 \usepackage{listings} % Para blocos de código
 \usepackage{xcolor} % Para cores no código
-\usepackage{placeins}
+\usepackage{placeins} % Para usar \FloatBarrier
 
 % Configuração para blocos de código
 \definecolor{codegreen}{rgb}{0,0.6,0}
@@ -79,20 +79,17 @@ Esta seção aborda os conceitos fundamentais que sustentam o desenvolvimento de
 \subsection{Teoria dos Grafos}
 Um grafo $G = (V, E)$ é uma estrutura matemática usada para modelar relações entre objetos, consistindo em um conjunto de vértices $V$ e um conjunto de arestas $E$ que conectam pares de vértices \cite{clrs}. Em um \textbf{grafo direcionado} (ou digrafo), as arestas são pares ordenados de vértices $(u, v)$, indicando uma ligação de $u$ para $v$. Um \textbf{caminho} em um digrafo é uma sequência de vértices onde cada vértice consecutivo na sequência está conectado por uma aresta direcionada. Um \textbf{ciclo} é um caminho que começa e termina no mesmo vértice.
 
-Um \textbf{Grafo Acíclico Direcionado (DAG)} é um grafo direcionado que não contém ciclos. Esta estrutura é fundamental
-para modelar problemas de pré-requisitos, como as dependências de software, onde um ciclo representaria uma condição ilógica (e.g., A depende de B, e B depende de A).
+Um \textbf{Grafo Acíclico Direcionado (DAG)} é um grafo direcionado que não contém ciclos. Esta estrutura é fundamental para modelar problemas de pré-requisitos, como as dependências de software, onde um ciclo representaria uma condição ilógica (e.g., A depende de B, e B depende de A).
 
 \subsection{Ordenação Topológica}
 A ordenação topológica de um DAG é uma ordenação linear de seus vértices tal que para toda aresta direcionada $(u, v)$, o vértice $u$ vem antes de $v$ na ordenação \cite{clrs}. Se o grafo contiver um ciclo, não há ordenação topológica possível, o que, no nosso contexto, corresponde a um erro de "dependência cíclica". A Figura~\ref{fig:grafo-ciclico} ilustra um exemplo de um grafo com dependências cíclicas, onde é impossível determinar uma ordem de precedência linear entre os nós.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=1\textwidth]{examples/cycle.png}
+    \includegraphics[width=0.8\textwidth]{examples/cycle.png}
     \caption{Exemplo de um grafo com uma dependência cíclica. O pacote `definition` depende de `foo` e `bar`, que, por sua vez, dependem de `definition`. Essa estrutura impede a criação de uma ordenação topológica.}
     \label{fig:grafo-ciclico}
 \end{figure}
-
-\FloatBarrier
 
 Existem duas abordagens principais para a ordenação topológica:
 
@@ -111,7 +108,7 @@ S = Conjunto de todos os nos sem arestas de entrada (in-degree 0)
 enquanto S nao esta vazio faca
   remover um no n de S
   adicionar n em L
-
+  
   para cada no m com uma aresta e de n para m faca
     remover aresta e do grafo
     se m nao tem mais arestas de entrada entao
@@ -139,13 +136,10 @@ A arquitetura geral da ferramenta, que segue o fluxo de extração, processament
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.75\textwidth]{images/diagrama_classes.png}
+    \includegraphics[width=0.9\textwidth]{images/diagrama_classes.png}
     \caption{Diagrama de componentes da ferramenta, ilustrando a interação entre os módulos de extração (\texttt{BuildDependencyGraph}), processamento (\texttt{Topological}) e renderização (\texttt{render\_graph}).}
     \label{fig:diagrama-classes}
 \end{figure}
-
-\FloatBarrier
-
 
 A ferramenta é composta por três módulos principais, conforme os arquivos \texttt{dependency\_graph\_builder.py}, \texttt{topological\_sorting.py} e \texttt{render.py}.
 
@@ -178,39 +172,36 @@ def extract_imports(file_path):
 Esta abordagem com duas expressões regulares distintas garante que tanto importações de linha única quanto blocos de importação sejam corretamente identificados. Embora eficaz, o uso de regex pode ser frágil a formatações de código muito atípicas.
 
 \subsubsection{Ordenação Topológica e Detecção de Ciclos}
-Após a construção do grafo, o módulo \texttt{topological\_sorting.py} implementa a lógica de ordenação. Primeiramente,
-um método de busca em profundidade, `is{\_}cyclic`, é invocado para garantir que o grafo é um DAG. Em seguida, o método
-`sort{\_}group`, mostrado na Listagem \ref{lst:sort-group}, executa o algoritmo de Kahn.
+Após a construção do grafo, o módulo \texttt{topological\_sorting.py} implementa a lógica de ordenação. Primeiramente, um método de busca em profundidade, `is{\_}cyclic`, é invocado para garantir que o grafo é um DAG. Em seguida, o método `sort{\_}group`, mostrado na Listagem \ref{lst:sort-group}, executa o algoritmo de Kahn.
 
 \begin{lstlisting}[language=Python, caption={Trecho do código de ordenação topológica (Kahn).}, label={lst:sort-group}]
-def sort_group(self, graph: defaultdict[str, set], in_degree: defaultdict[str, int]) -> list[str]:
+def sort_group(self, graph, in_degree):
     queue = deque()
-    leaves_matrix: list[str] = []
-
-    leaves_nodes = []
+    # Inicia a fila com nos de grau de entrada 0
     for v in graph:
         if in_degree[v] == 0:
-            leaves_nodes.append(v)
-    queue.append(leaves_nodes)
-
+            queue.append(v)
+    
+    sorted_layers = []
     while queue:
-        leaves_list = queue.popleft()
-        leaves_matrix.append(leaves_list)
-        new_leaves = []
-
-        for node in leaves_list:
-            for v in graph[node]:
-                in_degree[v] -= 1
-                if in_degree[v] == 0:
-                    new_leaves.append(v)
-
-        if new_leaves:
-            queue.append(new_leaves)
-
-    return leaves_matrix
+        # Processa uma camada inteira de nos
+        layer_size = len(queue)
+        current_layer = []
+        for _ in range(layer_size):
+            node = queue.popleft()
+            current_layer.append(node)
+            
+            # Atualiza o grau de entrada dos vizinhos
+            for neighbor in graph[node]:
+                in_degree[neighbor] -= 1
+                if in_degree[neighbor] == 0:
+                    queue.append(neighbor)
+        sorted_layers.append(current_layer)
+        
+    return sorted_layers
 \end{lstlisting}
 
-A implementação utiliza uma `deque` da biblioteca `collections` para uma performance eficiente de enfileirar e desenfileirar. A principal característica desta implementação é o processamento em "camadas", que agrupa todos os nós que podem ser processados, formando a base para a visualização hierárquica.
+A implementação utiliza uma `deque` da biblioteca `collections` para uma performance eficiente de enfileirar e desenfileirar. A principal característica desta implementação é o processamento em "camadas", que agrupa todos os nós que podem ser processados em paralelo, formando a base para a visualização hierárquica.
 
 \subsubsection{Visualização dos Resultados}
 Finalmente, o módulo \texttt{render.py} é responsável por traduzir a estrutura de dados do grafo em uma imagem. A biblioteca `graphviz` \cite{graphviz} foi escolhida para esta tarefa. O trecho de código mais relevante é aquele que agrupa os nós em subgrafos com o mesmo `rank`, como mostra a Listagem \ref{lst:render}.
@@ -230,39 +221,39 @@ def render(graph, sorted_nodes, external_packages):
                     s.node(node_name, style='filled', fillcolor='tomato')
                 else:
                     s.node(node_name, style='filled', fillcolor='lightgrey')
-
+    
     # Adiciona as arestas ao grafo
     for node in graph:
         for v in graph[node]:
             dot.edge(node, v)
-
+    
     # Gera o arquivo final (SVG embutido em HTML)
     ...
 \end{lstlisting}
 
 A diretiva `rank='same'` é o que garante que todos os pacotes em uma mesma camada da ordenação topológica sejam alinhados verticalmente, tornando a hierarquia de dependências clara e intuitiva.
 
+\FloatBarrier
+
 \section{Aplicação e Resultados}
-Para validar a ferramenta e demonstrar sua utilidade, ela foi aplicada a projetos com diferentes níveis de complexidade. Esta seção apresenta uma análise dos grafos gerados.
+Para validar a ferramenta e demonstrar sua utilidade, ela foi aplicada a quatro projetos com diferentes níveis de complexidade. Esta seção apresenta uma análise dos grafos gerados.
 
 \subsection{Estudo de Caso com Projetos Reais}
 
 \subsubsection{Caso 1: Aplicação Simples}
-O primeiro cenário, ilustrado na Figura \ref{fig:grafoExemplo}, representa uma aplicação web hipotética. O grafo gerado mostra uma estrutura clara e linear. Na camada mais à esquerda (Camada 0), temos os nós sem dependências internas (`models`, `os`, `sqlx`). As camadas subsequentes (`repository`, `services`, `api`, `main`) progridem linearmente, demonstrando uma arquitetura bem definida e de baixo acoplamento. Esta visualização permite a um desenvolvedor entender rapidamente o fluxo de compilação e a arquitetura geral.
+O primeiro cenário, ilustrado na Figura \ref{fig:grafoExemplo}, representa uma aplicação web hipotética. O grafo gerado mostra uma estrutura clara e linear. Na camada mais à esquerda (Camada 0), temos os nós sem dependências internas. As camadas subsequentes progridem linearmente, demonstrando uma arquitetura bem definida e de baixo acoplamento.
 
-\begin{figure}[htbp]
+\begin{figure}[htbp] 
 \centering
-\includegraphics[width=.8\textwidth]{examples/example.com.png}
+\includegraphics[width=1\textwidth]{examples/example.com.png}
 \caption{Visualização do grafo de um projeto simples, com dependências lineares.}
 \label{fig:grafoExemplo}
 \end{figure}
 
-\FloatBarrier
-
 \subsubsection{Caso 2: Biblioteca de CLI (Cobra)}
-A Figura \ref{fig:exemplo-2} exibe o grafo de dependências da popular biblioteca `Cobra`, usada para criar aplicações de linha de comando (CLI). A estrutura aqui é mais complexa. Observamos um nó central (`github.com/spf13/cobra`) do qual muitos outros pacotes dependem. Também vemos dependências de pacotes externos como `github.com/spf13/pflag`, que gerencia flags de comando. Este tipo de grafo, com um "hub" central, é típico de bibliotecas de framework, onde um pacote principal oferece a funcionalidade central que é estendida por outros.
+A Figura \ref{fig:exemplo-2} exibe o grafo de dependências da popular biblioteca `Cobra`. A estrutura aqui é mais complexa, com um nó "hub" central (`github.com/spf13/cobra`) do qual muitos outros pacotes dependem. Este tipo de grafo é típico de bibliotecas de framework, onde um pacote principal oferece a funcionalidade central.
 
-\begin{figure}[htbp]
+\begin{figure}[htbp] 
 \centering
 \includegraphics[width=1\textwidth]{examples/github.com_spf13_cobra.png}
 \caption{Grafo de dependências da biblioteca `Cobra`, mostrando uma estrutura de hub central.}
@@ -270,12 +261,12 @@ A Figura \ref{fig:exemplo-2} exibe o grafo de dependências da popular bibliotec
 \end{figure}
 
 \subsubsection{Caso 3: Biblioteca de Utilitários (Posener/CMD)}
-A Figura \ref{fig:exemplo-3} mostra o grafo da biblioteca `github.com/posener/cmd`. Este grafo exibe uma estrutura diferente, mais "larga" e menos profunda que as anteriores. Isso sugere que a biblioteca é uma coleção de utilitários mais ou menos independentes, que compartilham algumas dependências comuns (como o pacote `context`), mas não formam uma hierarquia rígida. A ferramenta revela que a arquitetura é altamente modular e de baixo acoplamento entre seus diferentes componentes.
+A Figura \ref{fig:exemplo-3} mostra o grafo da biblioteca `github.com/posener/cmd`. Este grafo exibe uma estrutura diferente, mais "larga" e menos profunda, sugerindo uma coleção de utilitários mais ou menos independentes que compartilham algumas dependências comuns mas não formam uma hierarquia rígida.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=.8\textwidth]{examples/github.com_posener_cmd.png}
-\caption{Grafo de dependências da biblioteca `posener/cmd`, exibindo uma arquitetura modular e de baixo acoplamento.}
+\includegraphics[width=1\textwidth]{examples/github.com_posener_cmd.png}
+\caption{Grafo de dependências da biblioteca `posener/cmd`, exibindo uma arquitetura modular.}
 \label{fig:exemplo-3}
 \end{figure}
 
@@ -284,27 +275,33 @@ O quarto e último caso, apresentado na Figura~\ref{fig:exemplo-4}, demonstra o 
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=.8\textwidth]{examples/webserver.png}
+\includegraphics[width=1\textwidth]{examples/webserver.png}
 \caption{Grafo de dependências de um servidor web simples utilizando o framework Echo.}
 \label{fig:exemplo-4}
 \end{figure}
 
-\FloatBarrier
+\FloatBarrier 
 
 \subsection{Discussão dos Resultados}
-A análise dos três casos demonstra a utilidade da ferramenta para diferentes tipos de projeto. Para aplicações simples, ela valida a arquitetura. Para bibliotecas complexas, ela revela padrões de design, como hubs centrais ou arquiteturas modulares. A capacidade de diferenciar visualmente pacotes internos e externos (coloridos de forma distinta) e de alinhar os pacotes por camada de dependência oferece uma visão imediata sobre a estrutura e a ordem de compilação, facilitando a depuração e o onboarding de novos desenvolvedores.
+A análise comparativa dos quatro casos revela a capacidade da ferramenta de extrair e visualizar diferentes padrões de arquitetura de software. Enquanto o Caso 1 (Aplicação Simples) e o Caso 4 (Servidor Web) representam arquiteturas de *aplicação*, onde um ou mais pacotes centrais consomem funcionalidades de bibliotecas, os Casos 2 (Cobra) e 3 (Posener/CMD) ilustram arquiteturas de *bibliotecas*, projetadas para serem consumidas por outros.
+
+O grafo do framework Cobra (Figura \ref{fig:exemplo-2}) evidencia um padrão de "hub-e-spoke", com alto acoplamento aferente no pacote principal, indicando sua centralidade. Uma alteração neste pacote tem um alto potencial de impacto em todo o ecossistema da biblioteca. Em contraste, a biblioteca Posener/CMD (Figura \ref{fig:exemplo-3}) demonstra alta coesão e baixo acoplamento entre seus diferentes módulos, sugerindo que a manutenção de um utilitário tem baixo risco de afetar os demais.
+
+A ferramenta, portanto, não serve apenas para validar a ordem de compilação, mas também como um mecanismo para avaliação qualitativa da arquitetura. A visualização em camadas permite que um desenvolvedor identifique rapidamente os pacotes mais fundamentais (camadas à esquerda) e os pontos de entrada da aplicação (camadas à direita), facilitando a depuração e o onboarding em projetos desconhecidos.
 
 \section{Conclusão}
 Este trabalho apresentou uma solução computacional para o problema de gestão de dependências em projetos Go. A modelagem do sistema de pacotes como um grafo direcionado provou-se eficaz, e a aplicação da ordenação topológica através do algoritmo de Kahn \cite{kahn1962} permitiu determinar a sequência de compilação segura e estruturar a visualização dos resultados de forma intuitiva. A ferramenta cumpre com sucesso os requisitos propostos, analisando o código-fonte, construindo um modelo em grafo e apresentando os resultados de forma clara. A capacidade de detectar ciclos de dependência é um recurso valioso para evitar erros comuns em projetos de grande porte.
 
 \subsection{Trabalhos Futuros}
-Apesar de funcional, a ferramenta pode ser estendida. Como trabalhos futuros, sugere-se:
-\begin{itemize}
-    \item \textbf{Análise de Desempenho:} Testar a ferramenta em repositórios extremamente grandes (e.g., Kubernetes).
-    \item \textbf{Parser Avançado:} Substituir as expressões regulares por um parser de AST, tornando a extração de importações mais robusta.
-    \item \textbf{Integração com IDEs:} Desenvolver um plugin para editores como o VS Code para exibir o grafo em tempo real.
-    \item \textbf{Análise de "Peso" das Arestas:} Estender o modelo para incluir métricas de acoplamento.
-\end{itemize}
+Apesar de funcional, a ferramenta pode ser estendida de várias maneiras para agregar ainda mais valor à análise de projetos de software.
+
+\paragraph{Parser Avançado.} A substituição das expressões regulares por um parser de Abstract Syntax Tree (AST), utilizando a biblioteca nativa `go/parser` do Go ou uma equivalente em Python, representa a melhoria mais significativa para a robustez da ferramenta. Isso eliminaria a fragilidade da abordagem atual em relação a formatações de código complexas ou não convencionais e permitiria a extração de informações mais ricas, como dependências em nível de função ou tipo.
+
+\paragraph{Integração com IDEs.} A criação de um plugin para editores de código populares, como o Visual Studio Code, utilizando o Language Server Protocol (LSP), permitiria que a análise de dependências fosse executada em tempo real. O desenvolvedor receberia alertas instantâneos sobre a criação de dependências cíclicas no momento da codificação, antes mesmo da etapa de compilação, agilizando o ciclo de desenvolvimento e prevenindo erros.
+
+\paragraph{Análise de "Peso" das Arestas.} Para uma análise mais profunda, o modelo pode ser estendido para atribuir "pesos" às arestas do grafo. Esse peso poderia representar o nível de acoplamento entre dois pacotes, calculado, por exemplo, pelo número de chamadas de funções, tipos de dados compartilhados ou variáveis públicas acessadas. A visualização desses pesos poderia destacar dependências críticas ou de alto acoplamento, que são candidatas a refatoração.
+
+\paragraph{Análise de Desempenho.} A aplicação da ferramenta em repositórios de código aberto de grande escala, como Kubernetes, Docker ou o próprio compilador Go, forneceria dados valiosos sobre sua performance e escalabilidade. Essa análise poderia identificar gargalos no processo de parsing ou na construção do grafo, guiando otimizações futuras no algoritmo.
 
 \bibliographystyle{sbc}
 \bibliography{sbc-template.bib}
