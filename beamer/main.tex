@@ -1,19 +1,49 @@
 \documentclass{beamer}
 
 % --- Escolha de Tema e Cores ---
-\usetheme{Madrid} % Um tema popular e limpo. Outras opções: Boadilla, AnnArbor, Warsaw
+\usetheme{Madrid}
 \usecolortheme{default}
 
 % --- Pacotes e Configurações ---
 \usepackage[utf8]{inputenc}
 \usepackage{graphicx}
+\usepackage{svg} % Pacote para incluir SVG
 \usepackage{amsmath}
+\usepackage{listings} % Para blocos de código
+\usepackage{xcolor} % Para cores no código
+
+% Configuração para blocos de código que já temos no artigo
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{customStyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
+}
+\lstset{style=customStyle}
+
 
 % --- Informações do Título ---
 \title[Análise de Dependências Go]{Gestão de Dependências em Projetos Go com Ordenação Topológica}
 \author{Nicholas Pereira Cristófaro \and Marcos Campos Dias}
 \institute{Pontifícia Universidade Católica de Minas Gerais (PUC Minas)}
-\date{Trabalho Prático - Processamento de Dados com Grafos - 2025}
+\date{Junho de 2025}
 
 % --- Início do Documento ---
 \begin{document}
@@ -26,156 +56,243 @@
 \end{frame}
 
 % ---------------------------------------------------------------
-% SLIDE 2: Introdução e Motivação
+% SLIDE 2: Sumário
 % ---------------------------------------------------------------
 \begin{frame}
-  \frametitle{Introdução: O Problema das Dependências}
-
-  \begin{columns}[T] % Divide o slide em colunas
-    \begin{column}{0.6\textwidth}
-      \textbf{O Desafio:}
-      \begin{itemize}
-        \item A gestão de dependências em software moderno é complexa ("inferno de dependências").
-        \item Em Go, a ordem de inicialização de pacotes é crítica e estrita.
-        \item \alert{Dependências Cíclicas} são erros de compilação, pois impedem a determinação de uma ordem de inicialização válida.
-      \end{itemize}
-    \end{column}
-    \begin{column}{0.4\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/cycle.png}
-        \tiny
-        \textit{Um ciclo impede a ordenação.}
-    \end{column}
-  \end{columns}
+    \frametitle{Sumário}
+    \tableofcontents
 \end{frame}
 
+% ---------------------------------------------------------------
+\section{Introdução}
+% ---------------------------------------------------------------
 \begin{frame}
-  \frametitle{Introdução: O Problema das Dependências}
-      \textbf{Nossa Proposta:}
-      \begin{itemize}
-        \item Uma ferramenta que modela as dependências de projetos Go como um grafo direcionado.
-        \item Utiliza a \alert{Ordenação Topológica} para:
+  \frametitle{Introdução: O Problema}
+  
+  \begin{block}{O Desafio em Software Moderno}
+    A gestão da complexa rede de dependências é um desafio central na engenharia de software , por vezes referido como "inferno de dependências".
+  \end{block}
+  
+  \begin{alertblock}{O Caso Específico do Go}
+    \itemize{
+      \item A linguagem impõe uma ordem de inicialização estrita para pacotes.
+      \item As funções \texttt{init()} de um pacote só executam após suas dependências serem inicializadas.
+      \item \textbf{Dependências Cíclicas} causam um erro fatal de compilação.
+    }
+  \end{alertblock}
+\end{frame}
+
+\section{Introdução}
+% ---------------------------------------------------------------
+\begin{frame}
+    \begin{figure}
+        \includegraphics[width=0.6\textwidth]{images/package_overview.png}
+        \caption{visualização de um projeto em Golang.}
+        \label{fig:grafo-ciclico}
+    \end{figure}
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{A Solução Proposta}
+    
+    \begin{itemize}
+        \item \textbf{Modelagem:} Representar o projeto e suas dependências como um \textbf{Grafo Direcionado}.
         \begin{itemize}
-          \item Determinar a sequência de compilação segura.
-          \item Visualizar a arquitetura do projeto.
+            \item Pacotes Go $\rightarrow$ Vértices
+            \item Imports $\rightarrow$ Arestas
         \end{itemize}
-      \end{itemize}
+        \bigskip
+        \item \textbf{Processamento:} Aplicar a \textbf{Ordenação Topológica} para encontrar a sequência de compilação.
+        \bigskip
+        \item \textbf{Resultado:} Uma ferramenta em Python que automatiza essa análise e gera uma \textbf{visualização clara} da arquitetura do projeto.
+    \end{itemize}
 \end{frame}
 
-
-% ---------------------------------------------------------------
-% SLIDE 3: Metodologia
-% ---------------------------------------------------------------
 \begin{frame}
-  \frametitle{Metodologia: Grafos e Ordenação Topológica}
-
-  \textbf{1. Modelagem do Problema}
-  \begin{itemize}
-    \item Cada \textbf{pacote Go} é um \textbf{vértice} no grafo.
-    \item Cada diretiva \texttt{import} de um pacote A para um pacote B cria uma \textbf{aresta direcionada} de B para A ($B \rightarrow A$), significando "A depende de B".
-  \end{itemize}
-  \vspace{1cm}
-
-  \textbf{2. Solução com Ordenação Topológica}
-  \begin{itemize}
-    \item É uma ordenação linear dos vértices onde cada dependência aparece antes do pacote que a utiliza.
-    \item \alert{Só é possível se o grafo for um DAG} (Grafo Acíclico Direcionado).
-    \item O resultado é a ordem de compilação/inicialização segura dos pacotes.
-  \end{itemize}
-
+    \begin{figure}
+        \includegraphics[width=1\textwidth]{images/model.png}
+        \caption{representação visual da modelagem.}
+        \label{fig:modelagem}
+    \end{figure}
 \end{frame}
 
 % ---------------------------------------------------------------
-% SLIDE 4: Algoritmo de Kahn
+\section{Metodologia}
 % ---------------------------------------------------------------
 \begin{frame}
-    \frametitle{O Algoritmo de Kahn (Visão Geral)}
+  \frametitle{Fundamentação: Ordenação Topológica}
+  
+    \begin{block}{Definição}
+        Uma ordenação topológica de um Grafo Acíclico Direcionado (DAG) é uma ordenação linear de seus vértices tal que para toda aresta direcionada $(u, v)$, o vértice $u$ vem antes de $v$ na ordenação.
+    \end{block}
 
-    A ordenação é feita em camadas, de forma iterativa:
-
-    \begin{enumerate}
-        \item \textbf{Calcular Grau de Entrada:} Contar quantas dependências cada pacote (nó) possui.
-        \vspace{0.5cm}
-        \item \textbf{Encontrar as Raízes:} Iniciar com uma fila de todos os pacotes que não têm dependências (grau de entrada zero).
-        \vspace{0.5cm}
-        \item \textbf{Processar em Camadas:}
-            \begin{itemize}
-                \item Remover um pacote da fila e adicioná-lo à lista ordenada.
-                \item "Dar baixa" nessa dependência para todos os pacotes que a importavam.
-                \item Se algum desses pacotes ficar com grau de entrada zero, adicioná-lo à fila.
-            \end{itemize}
-        \vspace{0.5cm}
-        \item \textbf{Verificar Ciclos:} Se, ao final, nem todos os pacotes foram para a lista ordenada, o grafo possui um ciclo.
-    \end{enumerate}
+    \begin{alertblock}{Pré-requisito: Ausência de Ciclos}
+        Se o grafo contiver um ciclo, a ordenação topológica é impossível. A Figura~\ref{fig:grafo-ciclico} ilustra essa condição.
+    \end{alertblock}
+    
+    \begin{figure}
+        \includegraphics[width=0.6\textwidth]{images/cycle.png}
+        \caption{Representação das relações entre pacotes em Golang}
+        \label{fig:golang-overview}
+    \end{figure}
 \end{frame}
 
 % ---------------------------------------------------------------
-% SLIDE 5: Arquitetura da Ferramenta
+\begin{frame}[fragile]
+    \frametitle{O Algoritmo de Kahn (Pseudocódigo)}
+    
+    A abordagem escolhida, proposta por Kahn em 1962, funciona de maneira iterativa.
+    
+    \begin{lstlisting}[language={}, basicstyle=\tiny\ttfamily]
+L = Lista vazia que contera os elementos ordenados
+S = Conjunto de todos os nos sem arestas de entrada
+
+enquanto S nao esta vazio faca
+  remover um no n de S
+  adicionar n em L
+  
+  para cada no m com uma aresta e de n para m faca
+    remover aresta e do grafo
+    se m nao tem mais arestas de entrada entao
+      inserir m em S
+
+se o grafo ainda contem arestas entao
+  retornar erro (grafo tem ciclo)
+senao
+  retornar L (ordenacao)
+    \end{lstlisting}
+\end{frame}
+
+% ---------------------------------------------------------------
+\section{A Ferramenta Desenvolvida}
 % ---------------------------------------------------------------
 \begin{frame}
-  \frametitle{Arquitetura da Ferramenta}
+  \frametitle{Arquitetura e Fluxo de Execução}
 
   \begin{figure}
-    \includegraphics[width=0.9\textwidth]{images/diagrama_classes.png}
-    \caption{Fluxo de execução: Extração, Processamento e Visualização.}
+    \includegraphics[width=\textwidth]{images/diagrama_classes.png}
+    \caption{Fluxo principal: Extração, Processamento e Visualização.}
   \end{figure}
 \end{frame}
 
 % ---------------------------------------------------------------
-% SLIDE 6: Resultados: Padrões de Arquitetura
+\begin{frame}[fragile]
+    \frametitle{Detalhe da Implementação: Extração e Visualização}
+    
+    \begin{exampleblock}{Extração de Dependências com Regex}
+        \begin{lstlisting}[language=Python, basicstyle=\tiny\ttfamily]
+# Encontra blocos: import (...)
+import_block_match = re.search(r'import\s+\((.*?)\)', ...)
+# Encontra linhas unicas: import "..."
+single_imports = re.findall(r'import\s+"([^"]+)"', ...)
+        \end{lstlisting}
+    \end{exampleblock}
+
+    \begin{exampleblock}{Visualização em Camadas com Graphviz}
+        \begin{lstlisting}[language=Python, basicstyle=\tiny\ttfamily]
+# Agrupa nos em subgrafos para alinhamento em camadas
+for layer in sorted_nodes:
+    with dot.subgraph() as s:
+        s.attr(rank='same') # Forca o mesmo rank (alinhamento)
+        for node_name in layer:
+            ...
+        \end{lstlisting}
+    \end{exampleblock}
+    A diretiva \texttt{rank='same'} é a chave para o alinhamento visual das camadas.
+\end{frame}
+
+
+% ---------------------------------------------------------------
+\section{Resultados: Estudo de Caso}
 % ---------------------------------------------------------------
 \begin{frame}
-  \frametitle{Resultados: Padrões de Arquitetura Identificados}
+  \frametitle{Caso 1: Aplicação Simples}
+    \begin{figure}
+        \includegraphics[width=0.9\textwidth]{images/init_example.png}
+        \caption{Grafo de um projeto simples com dependências lineares.}
+    \end{figure}
+    \begin{itemize}
+        \item Demonstra uma arquitetura clara, com baixo acoplamento.
+        \item As camadas progridem linearmente da esquerda (dependências) para a direita (aplicação).
+    \end{itemize}
+\end{frame}
 
-  \begin{columns}[T]
-    \begin{column}{0.32\textwidth}
-      \centering
-      \textbf{Framework (Hub)}\\
-      \includegraphics[width=\textwidth]{images/github.com_spf13_cobra.png}
-      \tiny
-      Um pacote central (`cobra`) oferece a funcionalidade principal.
-    \end{column}
-    \begin{column}{0.32\textwidth}
-      \centering
-      \textbf{Aplicação (Consumidor)}\\
-      \includegraphics[width=\textwidth]{images/webserver.png}
-      \tiny
-      Um pacote principal (`webserver.com`) consome múltiplas bibliotecas.
-    \end{column}
-    \begin{column}{0.32\textwidth}
-      \centering
-      \textbf{Bindings (Wrapper)}\\
-      \includegraphics[width=\textwidth]{images/gotk3.png}
-      \tiny
-      Muitos pacotes pequenos que espelham uma biblioteca C externa (GTK3).
-    \end{column}
-  \end{columns}
+\begin{frame}
+  \frametitle{Caso 2: Biblioteca de Framework (Cobra)}
+    \begin{figure}
+        \includegraphics[width=0.5\textwidth]{images/github.com_spf13_cobra.png}
+        \caption{Grafo da biblioteca `Cobra`.}
+    \end{figure}
+    \begin{itemize}
+        \item Revela um padrão de "hub-e-spoke".
+        \item O pacote central \texttt{cobra} é um "hub" do qual muitos outros dependem, típico de frameworks.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Caso 3: Bindings para GUI (gotk3)}
+    \begin{figure}
+        \includegraphics[width=0.7\textwidth]{images/gotk3.png}
+        \caption{Grafo do projeto `gotk3`, bindings para GTK3.}
+    \end{figure}
+    \begin{itemize}
+        \item Grafo denso e expansivo, revelando uma arquitetura de "wrappers".
+        \item Pacotes Go (`gtk`, `gdk`) espelham a estrutura da biblioteca C subjacente.
+    \end{itemize}
 \end{frame}
 
 % ---------------------------------------------------------------
-% SLIDE 7: Conclusão
+\section{Conclusão}
 % ---------------------------------------------------------------
 \begin{frame}
-  \frametitle{Conclusão e Trabalhos Futuros}
+  \frametitle{Discussão e Conclusão}
+  
+  \begin{block}{Discussão dos Resultados}
+    A ferramenta foi capaz de identificar e visualizar diferentes padrões de arquitetura:
+    \begin{itemize}
+        \item \textbf{Aplicações:} Padrão "consumidor", onde um nó central integra bibliotecas.
+        \item \textbf{Frameworks:} Padrão "hub", com um pacote principal que exporta funcionalidades.
+        \item \textbf{Bindings:} Padrão "wrapper", com grafos densos que mapeiam sistemas externos.
+    \end{itemize}
+  \end{block}
+  
+  \begin{block}{Conclusão}
+      A modelagem com grafos e a ordenação topológica são eficazes para a gestão de dependências em Go, permitindo não apenas a detecção de erros (ciclos), mas também uma profunda análise da arquitetura do software.
+  \end{block}
+\end{frame}
 
-  \textbf{Conclusões}
-  \begin{itemize}
-      \item A modelagem de dependências como um grafo é uma abordagem eficaz e visual para entender a arquitetura de software.
-      \item A ferramenta desenvolvida valida a ordem de compilação, detecta ciclos e revela padrões de design de forma automatizada.
-      \item A visualização em camadas facilita a identificação de componentes críticos e o fluxo de dependências.
-  \end{itemize}
-  \vspace{1cm}
-
-  \textbf{Trabalhos Futuros}
-  \begin{itemize}
-      \item \textbf{Parser Avançado (AST):} Aumentar a precisão da extração de dependências.
-      \item \textbf{Integração com IDEs:} Fornecer feedback sobre ciclos em tempo real para o desenvolvedor.
-  \end{itemize}
-
+\begin{frame}
+  \frametitle{Trabalhos Futuros}
+  
+    \begin{itemize}
+        \item \textbf{Integração com IDEs:}
+        \begin{itemize}
+            \item Desenvolver um plugin para editores (e.g., VS Code) para fornecer feedback sobre a criação de ciclos em tempo real.
+        \end{itemize}
+        \bigskip
+        \item \textbf{Análise de "Peso" das Arestas:}
+        \begin{itemize}
+            \item Estender o modelo para quantificar o nível de acoplamento entre pacotes, destacando dependências críticas.
+        \end{itemize}
+    \end{itemize}
 \end{frame}
 
 % ---------------------------------------------------------------
-% SLIDE 8: Agradecimento
+\begin{frame}
+  \frametitle{Referências Bibliográficas}
+  \small{
+      \begin{thebibliography}{99}
+        \bibitem{jergensen2011} Jergensen, N. and Axelsen, J. (2011). \textit{An Analysis of the State of Dependency Hell in the .NET Open Source Ecosystem}. In MLR '11.
+        \bibitem{donovan2015go} Donovan, A. A. A. and Kernighan, B. W. (2015). \textit{The Go Programming Language}. Addison-Wesley.
+        \bibitem{GoSpec} The Go Authors (2024). \textit{The Go Programming Language Specification}. \url{https://go.dev/ref/spec}.
+        \bibitem{clrs} Cormen, T. H. et al. (2009). \textit{Introduction to Algorithms}. The MIT Press, 3rd edition.
+        \bibitem{kahn1962} Kahn, A. B. (1962). \textit{Topological sorting of large networks}. Communications of the ACM, 5(11):558–562.
+        \bibitem{graphviz} The Graphviz Team (2024). \textit{Graphviz - Graph Visualization Software}. \url{https://graphviz.org/}.
+      \end{thebibliography}
+  }
+\end{frame}
+
 % ---------------------------------------------------------------
 \begin{frame}
   \vfill
@@ -185,6 +302,5 @@
   \Large{Perguntas?}
   \vfill
 \end{frame}
-
 
 \end{document}
